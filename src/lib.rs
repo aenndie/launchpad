@@ -19,7 +19,7 @@ pub struct PyroNFT {
     pub tattoos: String, 
     pub wall: String, 
     pub traits: Vec<(String, String)>, 
-    pub key_image_hash: String, 
+    pub key_image_hash: String,     
 }
 
 #[derive(NonFungibleData, ScryptoSbor)]
@@ -88,6 +88,9 @@ mod pyro {
             // config settings
             set_check_assertions => restrict_to: [admin, super_admin, OWNER];  
             set_max_assign_at_once => restrict_to: [admin, super_admin, OWNER];  
+
+            get_ph_bucket => PUBLIC;
+            get_latest_usd_price => PUBLIC;
                        
         }
     }
@@ -176,7 +179,8 @@ mod pyro {
             max_assign_at_once: u16, 
             manual_usd_price:Decimal, 
             use_manual_usd_price: bool,
-            ct_phs_unassigned:u16
+            ct_phs_unassigned:u16, 
+            do_check_for_same_transaction:bool
         }
     
 
@@ -186,7 +190,7 @@ mod pyro {
             ph_name:String, ph_desc:String, ph_info_url:String, ph_icon_url:String, 
             ph_nft_description: String, ph_nft_filenames: Vec<String>, max_coll_size:u16, amount_nfts_for_team: u16, 
             cap_buffer_sale_usd: u16, dapp_definition_address:ComponentAddress, max_amount_nfts_per_buy:u16, 
-            max_assign_at_once: u16
+            max_assign_at_once: u16, do_check_for_same_transaction:bool
             )             
             -> (Global<Pyro>, FungibleBucket, FungibleBucket, FungibleBucket)  { 
                        
@@ -280,6 +284,7 @@ mod pyro {
                      ))
                     .create_with_no_initial_supply(); 
 
+
             // create Placeholder NFT resource - mint badge required
             let rm_pyro_ph =
                     ResourceBuilder::new_integer_non_fungible::<PyroPlaceholder>(OwnerRole::None) // 
@@ -355,7 +360,8 @@ mod pyro {
                 max_assign_at_once: max_assign_at_once, 
                 use_manual_usd_price:false,
                 manual_usd_price: Decimal::ZERO, 
-                ct_phs_unassigned: 0u16
+                ct_phs_unassigned: 0u16, 
+                do_check_for_same_transaction
             }
             .instantiate()            
             .prepare_to_globalize(OwnerRole::Fixed(
@@ -1070,8 +1076,10 @@ mod pyro {
             let latest_trans = self.last_random_based_on_trans_hash;
             let this_trans = Self::get_nr_based_on_trans_hash();
 
-            assert!(latest_trans != this_trans, "You cannot buy placeholder/get placeholder for team within the same transaction.")
-
+            if self.do_check_for_same_transaction
+            {
+                assert!(latest_trans != this_trans, "You cannot buy placeholder/get placeholder for team within the same transaction.");
+            }            
         }
 
         fn check_assertions(&mut self)
@@ -1124,6 +1132,16 @@ mod pyro {
         fn set_ct_phs_unassigned(&mut self)
         {
             self.ct_phs_unassigned = self.ct_phs_sold_total - self.ct_phs_mapped;
+        }
+
+        pub fn get_ph_bucket(&self) -> Bucket
+        {
+            Bucket::new(self.rm_pyro_ph.address())
+        }
+
+        pub fn get_latest_usd_price(&self) -> Decimal 
+        {
+            self.latest_usd_price
         }
     }
 }
