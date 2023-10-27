@@ -90,6 +90,7 @@ mod pyro {
             set_max_assign_at_once => restrict_to: [admin, super_admin, OWNER];  
 
             get_ph_bucket => PUBLIC;
+            get_pyro_bucket => PUBLIC;
             get_latest_usd_price => PUBLIC;
             get_internal_state => PUBLIC;
             set_do_check_for_same_transaction => PUBLIC;                       
@@ -174,7 +175,7 @@ mod pyro {
             coupons: KeyValueStore<String, bool>, // make sure coupon code is not redeemed twice (so method is not called twice for same coupon)                     
             last_random_based_on_trans_hash: u32, 
 
-            max_amount_nfts_per_buy:u16, 
+            max_amount_nfts_per_buy_or_change:u16, 
             latest_mint_id:u16, 
             check_assertions:bool, 
             max_assign_at_once: u16, 
@@ -190,7 +191,7 @@ mod pyro {
             nft_name:String, nft_desc:String, nft_info_url:String, nft_icon_url:String, 
             ph_name:String, ph_desc:String, ph_info_url:String, ph_icon_url:String, 
             ph_nft_description: String, ph_nft_filenames: Vec<String>, max_coll_size:u16, amount_nfts_for_team: u16, 
-            cap_buffer_sale_usd: u16, dapp_definition_address:ComponentAddress, max_amount_nfts_per_buy:u16, 
+            cap_buffer_sale_usd: u16, dapp_definition_address:ComponentAddress, max_amount_nfts_per_buy_or_change:u16, 
             max_assign_at_once: u16
             )             
             -> (Global<Pyro>, FungibleBucket, FungibleBucket, FungibleBucket)  { 
@@ -355,7 +356,7 @@ mod pyro {
                 ct_sold_usd_total: 0u16, 
                 last_random_based_on_trans_hash: 0u32, 
                 latest_usd_price: usd_price, 
-                max_amount_nfts_per_buy: max_amount_nfts_per_buy, 
+                max_amount_nfts_per_buy_or_change: max_amount_nfts_per_buy_or_change, 
                 latest_mint_id: 0u16, 
                 check_assertions: true, 
                 max_assign_at_once: max_assign_at_once, 
@@ -821,7 +822,7 @@ mod pyro {
 
             assert!(!self.status_sale_paused, "Sale is currently paused.");  
 
-            assert!(amount<=self.max_amount_nfts_per_buy, "You can only buy {} NFTs at once.", self.max_amount_nfts_per_buy);
+            assert!(amount<=self.max_amount_nfts_per_buy_or_change, "You can only buy {} NFTs at once.", self.max_amount_nfts_per_buy_or_change);    
 
             assert!(payment.resource_address() == XRD, "You can only buy with XRD.");
 
@@ -858,21 +859,20 @@ mod pyro {
         // change placeholders into real pyro nfts
         pub fn change_placeholders_into_nfts(&mut self, placeholders: Bucket, amount: u16) -> (NonFungibleBucket, Bucket) {                                     
             
-            assert!(amount > 0, "Amount should be greater than zero, but is {}.", amount);
-            
+            assert!(amount > 0, "Amount should be greater than zero, but is {}.", amount);            
+            assert!(amount<=self.max_amount_nfts_per_buy_or_change, "You can only chage {} Placeholderss at once.", self.max_amount_nfts_per_buy_or_change);
             // check if placeholders resource address is the right one.
             assert!(placeholders.resource_address() == self.vault_phs.resource_address(), "Placeholder adress is {} but should be {}", placeholders.resource_address().to_hex(), self.vault_phs.resource_address().to_hex() );
-
             assert!(self.status_sale_started, "Sale is not started yet. That is why changing placeholders into individual NFTs cannot be done yet.");
-
             // check if there are enough placeholder nfts
             assert!(placeholders.amount()>= Decimal::from(amount), "Only {} placeholders in bucket, but {} needed.", placeholders.amount(), amount);
+            assert!(self.ct_phs_mapped == self.ct_phs_sold_total, "Not all placeholders were mapped to real NFTs. {} sold, but only {} mapped", self.ct_phs_sold_total, self.ct_phs_mapped );
                         
             // retrieve "random" nfts which were actually mapped in assign method before
             let (nfts, placeholders) = self.get_mapped_nfts(placeholders, amount);
             
             // make sure caller gets requested amount of NFTs
-            assert!(nfts.amount() == Decimal::from(amount), "{} nfts should be bought, but only {} would be returned", amount, nfts.amount());
+            assert!(nfts.amount() == Decimal::from(amount), "{} nfts should be bought, but only {} would be returned", amount, nfts.amount());            
             
             self.check_assertions();
 
@@ -1138,6 +1138,11 @@ mod pyro {
         pub fn get_ph_bucket(&self) -> Bucket
         {
             Bucket::new(self.rm_pyro_ph.address())
+        }
+
+        pub fn get_pyro_bucket(&self) -> Bucket
+        {
+            Bucket::new(self.rm_pyro_nft.address())
         }
 
         pub fn get_latest_usd_price(&self) -> Decimal 

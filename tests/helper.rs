@@ -1,7 +1,7 @@
 //use pretty_assertions::assert_eq;
 use pyro19::test_bindings::*;
 use dummy_account::test_bindings::*;
-use scrypto::this_package;
+use scrypto::this_package; // resource::ScryptoBucket
 use scrypto_test::prelude::*;
 // use scrypto::{prelude::Vault, resource::ScryptoVault, this_package};
 
@@ -16,6 +16,7 @@ pub struct MigrationHelper {
     pub pyro19: Option<Pyro>,
     //pub phs_vault: Vault,
     pub phs_bucket: Option<Bucket>, 
+    pub pyros_bucket: Option<Bucket>, 
     pub latest_usd_price: Decimal
 }
 
@@ -71,6 +72,7 @@ impl MigrationHelper {
             pyro19: None,
             // phs_vault: Vault::new( XRD ) // WORKAROUND: should be empty
             phs_bucket: None, 
+            pyros_bucket: None, 
             latest_usd_price: Decimal::ZERO
         })
 
@@ -140,6 +142,8 @@ impl MigrationHelper {
         
         let b = pyro19.get_ph_bucket(&mut self.env)?;
         self.phs_bucket = Some(b);
+
+        self.pyros_bucket = Some ( pyro19.get_pyro_bucket(&mut self.env)? );
 
         self.latest_usd_price = pyro19.get_latest_usd_price(&mut self.env)?;
 
@@ -351,6 +355,57 @@ impl MigrationHelper {
         let amount_phs = self.phs_bucket.as_mut().unwrap().amount(&mut self.env)?;
 
         assert_eq!(amount_phs, amount_expected);
+
+        Ok(())
+    }
+
+    pub fn expect_pyros_in_bucket(&mut self, amount_expected:Decimal) -> Result<(), RuntimeError>
+    {
+        let amount_pyros = self.pyros_bucket.as_mut().unwrap().amount(&mut self.env)?;
+
+        assert_eq!(amount_pyros, amount_expected);
+
+        Ok(())
+    }
+
+
+    pub fn change_placeholders_into_nfts(&mut self, amount: u16) -> Result<(), RuntimeError>
+    {
+        self.change_placeholders_into_nfts_check(Decimal::from(amount), amount).unwrap();
+
+        Ok(())
+    }
+    
+    pub fn change_placeholders_into_nfts_check(&mut self, amount_bucket: Decimal, amount: u16) -> Result<(), RuntimeError>
+    {
+        let pyro = self.pyro19.unwrap();
+
+        let (_, _, _, d1, _, _, _, _) = pyro.get_internal_state(&mut self.env)?;
+
+        // get amount_bucket phs from internal helper bucket for changing into pyro nfts
+        let mut pyro = self.pyro19.unwrap();  
+        let bucket = self.phs_bucket.as_mut().unwrap().take(amount_bucket, &mut self.env)?;
+        
+        let (pyros, phs) = pyro.change_placeholders_into_nfts( bucket, amount, &mut self.env).unwrap();
+
+        // check internal
+        let (_, _, _, d2, _, _, _, _) = pyro.get_internal_state(&mut self.env)?;
+        
+        assert_eq!(d2, d1 - amount);        
+
+        // check return
+        let pyros_bucket: Bucket = pyros.into();
+
+        assert_eq!(pyros_bucket.amount(&mut self.env)?, Decimal::from(amount) );
+
+        let amount_phs_expected = Decimal::from(amount_bucket) - amount;
+
+        assert_eq!(phs.amount(&mut self.env)?, amount_phs_expected);
+
+        // store results in bucket of helper
+        self.pyros_bucket.as_mut().unwrap().put( pyros_bucket, &mut self.env ).unwrap();
+        self.phs_bucket.as_mut().unwrap().put( phs, &mut self.env ).unwrap();
+
 
         Ok(())
     }
