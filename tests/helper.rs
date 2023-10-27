@@ -129,8 +129,7 @@ impl MigrationHelper {
                 25u16,
                 self.dapp_definition,
                 50u16,
-                20u16, 
-                false, 
+                20u16,                 
                 self.package_address,                
                 &mut self.env);
             //}
@@ -143,6 +142,8 @@ impl MigrationHelper {
         self.phs_bucket = Some(b);
 
         self.latest_usd_price = pyro19.get_latest_usd_price(&mut self.env)?;
+
+        self.set_do_check_for_same_transaction(false);
 
         Ok(())
     }
@@ -175,6 +176,7 @@ impl MigrationHelper {
 
         assert_eq!( phs.amount(&mut self.env)?, Decimal::from(amount_placeholders) );
 
+        self.env.disable_costing_module();
         // check internal state
         let (a2, b2, _, _, _, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
 
@@ -290,5 +292,40 @@ impl MigrationHelper {
         pyro.set_price(price1, price2, price3, amount_stage1, amount_stage2, &mut self.env)
     }
 
+    pub fn assign_placeholders_to_nfts(&mut self) -> Result<(), RuntimeError>
+    {
+       self.assign_placeholders_to_nfts_check(false, 0)
+    }
+    
+    pub fn assign_placeholders_to_nfts_check(&mut self, do_check:bool, amount_expected:u16) -> Result<(), RuntimeError>
+    {
+        let mut pyro = self.pyro19.unwrap();
+
+        let (_, _, c1, _, e1, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+
+        pyro.assign_placeholders_to_nfts(&mut self.env).unwrap();
+
+        let (_, _, c2, _, e2, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+
+        
+        // check internal state
+        assert_eq!(c2-c1, e1-e2);
+        
+        if do_check
+        {
+            let amount_mapped = c2 - c1;
+
+            assert_eq!(amount_mapped, amount_expected);
+        }
+
+        Ok(())
+    }
+
+    pub fn set_do_check_for_same_transaction(&mut self, do_check:bool) -> Result<(), RuntimeError>
+    {
+        let mut pyro = self.pyro19.unwrap();
+
+        pyro.set_do_check_for_same_transaction(do_check, &mut self.env)
+    }
 
 }

@@ -92,7 +92,7 @@ mod pyro {
             get_ph_bucket => PUBLIC;
             get_latest_usd_price => PUBLIC;
             get_internal_state => PUBLIC;
-                       
+            set_do_check_for_same_transaction => PUBLIC;                       
         }
     }
 
@@ -191,7 +191,7 @@ mod pyro {
             ph_name:String, ph_desc:String, ph_info_url:String, ph_icon_url:String, 
             ph_nft_description: String, ph_nft_filenames: Vec<String>, max_coll_size:u16, amount_nfts_for_team: u16, 
             cap_buffer_sale_usd: u16, dapp_definition_address:ComponentAddress, max_amount_nfts_per_buy:u16, 
-            max_assign_at_once: u16, do_check_for_same_transaction:bool
+            max_assign_at_once: u16
             )             
             -> (Global<Pyro>, FungibleBucket, FungibleBucket, FungibleBucket)  { 
                        
@@ -362,7 +362,7 @@ mod pyro {
                 use_manual_usd_price:false,
                 manual_usd_price: Decimal::ZERO, 
                 ct_phs_unassigned: 0u16, 
-                do_check_for_same_transaction
+                do_check_for_same_transaction: true
             }
             .instantiate()            
             .prepare_to_globalize(OwnerRole::Fixed(
@@ -1165,6 +1165,11 @@ mod pyro {
 
             (a, b, c, d, e, f, g, h)
 
+        }
+
+        pub fn set_do_check_for_same_transaction(&mut self, do_check:bool)
+        {
+            self.do_check_for_same_transaction = do_check;
         }
     }
 }

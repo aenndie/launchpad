@@ -2,6 +2,7 @@ mod helper;
 use scrypto_test::prelude::*;
 use helper::*;
 
+
 #[test]
 fn tc_0_0_just_instantiate() {    
 
@@ -669,4 +670,193 @@ fn tc_2_6_5_price_stage_2_case_gr_coll_size() {
     helper.instantiate(collection_size, team_amount, price).unwrap();
 
     helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 101).unwrap();
+}
+
+
+
+ #[test]
+ #[should_panic]
+fn tc_3_1_1_assign_placeholder_case_no_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    
+    helper.mint_till_start_sale(100, 10);
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+    
+    // assign phs
+    helper.env.enable_auth_module();
+    
+    helper.assign_placeholders_to_nfts().unwrap();
+    
+    helper.env.disable_auth_module();
+}
+
+#[test]
+fn tc_3_1_2_assign_placeholder_case_auth_mod_disabled() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    
+    helper.mint_till_start_sale(100, 10);
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+    
+    // assign phs        
+    helper.assign_placeholders_to_nfts().unwrap();    
+}
+
+
+#[test]
+#[should_panic]
+fn tc_3_2_1_same_transaction_case_buy_ph() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    
+    helper.mint_till_start_sale(100, 10);
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+    
+    // assign phs        
+    helper.set_do_check_for_same_transaction(true);
+    helper.assign_placeholders_to_nfts().unwrap();    
+    helper.set_do_check_for_same_transaction(false);
+}
+
+#[test]
+#[should_panic]
+fn tc_3_2_2_same_transaction_case_team() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    
+    helper.set_do_check_for_same_transaction(true);    
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    helper.assign_placeholders_to_nfts().unwrap();    
+    
+    helper.set_do_check_for_same_transaction(false);
+}
+
+#[test]
+#[should_panic]
+fn tc_3_3_0_amount_mapped_case_doublecheck() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+
+    // expect 5 phs to be assignd: 10 team pyros were assigned while starting sale
+    // so 4 should fail
+    helper.assign_placeholders_to_nfts_check(true, 4).unwrap();            
+}
+
+
+// max amount for mapping at once is set to 20
+
+#[test]
+fn tc_3_3_1_amount_mapped_case_lt_max() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    // buy 5 phs
+    let amount_token = 19 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  19, amount_token).unwrap();
+
+    // expect 19 phs to be assignd: 10 team pyros were assigned while starting sale
+    helper.assign_placeholders_to_nfts_check(true, 19).unwrap();            
+}
+
+#[test]
+fn tc_3_3_1_amount_mapped_case_eq_max() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    // buy 20 phs
+    let amount_token = 20 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  20, amount_token).unwrap();
+
+    // expect 20 phs to be assignd: 10 team pyros were assigned while starting sale
+    helper.assign_placeholders_to_nfts_check(true, 20).unwrap();            
+}
+
+#[test]
+fn tc_3_3_1_amount_mapped_case_gt_max() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    // buy 21 phs
+    let amount_token = 21 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  21, amount_token).unwrap();
+
+    // expect 20 phs to be assignd: 10 team pyros were assigned while starting sale
+    helper.assign_placeholders_to_nfts_check(true, 20).unwrap();            
 }
