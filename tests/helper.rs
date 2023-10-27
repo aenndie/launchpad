@@ -183,6 +183,9 @@ impl MigrationHelper {
         assert_eq!(a2, a1 - amount_placeholders);
         assert_eq!(b2, b1 + amount_placeholders);
 
+        // store placeholders in bucket for later usage
+        self.phs_bucket.as_mut().unwrap().put(phs, &mut self.env)?;
+
         Ok(())
     }
 
@@ -252,11 +255,25 @@ impl MigrationHelper {
                 
         let phs_amount = phs.amount(&mut self.env)?;        
 
-        //self.phs_bucket.unwrap().put(phs, &mut self.env);
-        let b = self.phs_bucket.as_mut().unwrap();
+        // check return
+        assert_eq!(phs_amount, Decimal::from(amount));
+
+        // store phs in bucket for later usage
+        //let mut b = 
+        self.phs_bucket.as_mut().unwrap().put(phs, &mut self.env)?;
+
+        /*
+        let amount_before = b.amount(&mut self.env)?;
+
         b.put(phs, &mut self.env)?;
 
-        assert_eq!(phs_amount, Decimal::from(amount));
+        // check if changes on b affected self.phs_bucket
+        b = self.phs_bucket.as_mut().unwrap();
+
+        let amount_after = b.amount(&mut self.env)?;
+
+        assert_eq!(amount_before + Decimal::from(amount), amount_after);
+        */
 
         Ok(())
     }
@@ -320,12 +337,22 @@ impl MigrationHelper {
 
         Ok(())
     }
+    
 
     pub fn set_do_check_for_same_transaction(&mut self, do_check:bool) -> Result<(), RuntimeError>
     {
         let mut pyro = self.pyro19.unwrap();
 
         pyro.set_do_check_for_same_transaction(do_check, &mut self.env)
+    }
+
+    pub fn expect_phs_in_bucket(&mut self, amount_expected:Decimal) -> Result<(), RuntimeError>
+    {
+        let amount_phs = self.phs_bucket.as_mut().unwrap().amount(&mut self.env)?;
+
+        assert_eq!(amount_phs, amount_expected);
+
+        Ok(())
     }
 
 }

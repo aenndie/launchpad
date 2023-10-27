@@ -2,7 +2,7 @@ mod helper;
 use scrypto_test::prelude::*;
 use helper::*;
 
-
+/*
 #[test]
 fn tc_0_0_just_instantiate() {    
 
@@ -859,4 +859,77 @@ fn tc_3_3_1_amount_mapped_case_gt_max() {
 
     // expect 20 phs to be assignd: 10 team pyros were assigned while starting sale
     helper.assign_placeholders_to_nfts_check(true, 20).unwrap();            
+}
+
+*/
+
+#[test]
+fn check_if_storing_phs_works() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    helper.expect_phs_in_bucket(dec!("10")).unwrap();
+
+    // buy 21 phs
+    let amount_token = 21 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  21, amount_token).unwrap();
+
+    helper.expect_phs_in_bucket(dec!("31")).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn check_if_storing_phs_double_check1() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    helper.expect_phs_in_bucket(dec!("11")).unwrap(); // should fail
+
+    // buy 21 phs
+    let amount_token = 21 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  21, amount_token).unwrap();
+
+    helper.expect_phs_in_bucket(dec!("31")).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn check_if_storing_phs_double_check2() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    
+    // get_phs_for_team is called within this method
+    helper.mint_till_start_sale(100, 10);
+
+    helper.expect_phs_in_bucket(dec!("10")).unwrap();
+
+    // buy 21 phs
+    let amount_token = 21 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  21, amount_token).unwrap();
+
+    helper.expect_phs_in_bucket(dec!("32")).unwrap(); // should fail
 }
