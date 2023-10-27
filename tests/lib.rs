@@ -464,3 +464,209 @@ fn tc_1_9_6_price_correct_case_range3() {
     let amount_token = 1125 * helper.latest_usd_price;
     helper.buy_placeholders_check(true,  45u16, amount_token, true, dec!("0.0")).unwrap();    
 }
+
+
+#[test]
+#[should_panic]
+fn tc_2_1_1_set_price_case_no_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.env.enable_auth_module();     
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+}
+
+
+#[test]
+fn tc_2_1_2_set_price_case_auth_disabled() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.env.disable_auth_module();     
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+}
+
+//todo 2_1_3 how to create proof?
+
+// 2_2_1, 2_3_1 and 2_4_1 ->
+
+#[test]
+#[should_panic]
+fn tc_2_2_2_price_zero_case_price1_zero() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.env.disable_auth_module();     
+
+    helper.set_price(dec!("0"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+}
+
+#[test]
+#[should_panic]
+fn tc_2_3_2_price_zero_case_price2_zero() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();    
+
+    helper.set_price(dec!("15"), dec!("0"), dec!("25"), 10, 20 ).unwrap();        
+}
+
+#[test]
+#[should_panic]
+fn tc_2_4_2_price_zero_case_price3_zero() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("0"), 10, 20 ).unwrap();        
+}
+
+#[test]
+#[should_panic]
+fn tc_2_2_3_price_zero_case_price1_neg() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.env.disable_auth_module();     
+
+    helper.set_price(dec!("-1"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+}
+
+#[test]
+#[should_panic]
+fn tc_2_3_3_price_zero_case_price2_neg() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();    
+
+    helper.set_price(dec!("15"), dec!("-1"), dec!("25"), 10, 20 ).unwrap();        
+}
+
+#[test]
+#[should_panic]
+fn tc_2_4_3_price_zero_case_price3_neg() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("-1"), 10, 20 ).unwrap();        
+}
+
+#[test]
+// is allowed
+fn tc_2_5_2_price_stage_1_case_zero() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 0, 20).unwrap();        
+}
+
+#[test]
+fn tc_2_6_2_price_stage_2_case_eq_stage1() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 10).unwrap();        
+}
+
+#[test]
+#[should_panic]
+fn tc_2_6_3_price_stage_2_case_lt_stage1() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 9).unwrap();        
+}
+
+#[test]
+fn tc_2_6_4_price_stage_2_case_eq_coll_size() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 100).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tc_2_6_5_price_stage_2_case_gr_coll_size() {
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size, team_amount, price).unwrap();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 101).unwrap();
+}
