@@ -91,6 +91,7 @@ mod pyro {
 
             get_ph_bucket => PUBLIC;
             get_latest_usd_price => PUBLIC;
+            get_internal_state => PUBLIC;
                        
         }
     }
@@ -1142,6 +1143,28 @@ mod pyro {
         pub fn get_latest_usd_price(&self) -> Decimal 
         {
             self.latest_usd_price
+        }
+
+        pub fn get_internal_state(&self) -> (Decimal, u16, u16, Decimal, u16, u16, u16, Decimal)
+        {
+            let a = self.vault_phs.amount();
+
+            let b = self.ct_phs_sold_total;
+
+            let c = self.mapping_ph_nft.len() as u16;
+
+            let d = self.vault_nfts.amount();
+
+            let e = self.nft_ids.len() as u16;
+
+            let f = self.ct_sold_usd_just_reserved;
+
+            let g = self.cap_buffer_sale_usd;
+
+            let h = self.vault_collected_xrd.amount();
+
+            (a, b, c, d, e, f, g, h)
+
         }
     }
 }

@@ -47,11 +47,11 @@ impl MigrationHelper {
 
         let non_xrd_token = ResourceBuilder::new_fungible(OwnerRole::None)
             .divisibility(18)
-            .mint_initial_supply(1000, &mut env)?;        
+            .mint_initial_supply(100000, &mut env)?;        
 
         let xrd_token = BucketFactory::create_fungible_bucket(
             XRD,
-            1000.into(),
+            100000.into(),
             Mock,
             &mut env
         )?;
@@ -148,32 +148,44 @@ impl MigrationHelper {
     }
 
 
-    fn buy_placeholders_check(&mut self, use_xrd:bool, amount_placeholders:u16, amount_token:Decimal, check_change:bool, expected_change:Decimal) -> Result<(), RuntimeError>
+    pub fn buy_placeholders_check(&mut self, use_xrd:bool, amount_placeholders:u16, amount_token:Decimal, check_change:bool, expected_change:Decimal) -> Result<(), RuntimeError>
     {           
+        self.env.enable_costing_module();
+
+        let mut pyro = self.pyro19.unwrap();
+
+        let (a1, b1, _, _, _, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+
         let mut payment = self.xrd_token.take(amount_token, &mut self.env)?;
         
         if !use_xrd
         {
             payment = self.non_xrd_token.take(amount_token, &mut self.env)?;
         }
-
-        let mut pyro = self.pyro19.unwrap();
-
-        let (phs, change) = pyro.buy_placeholders(payment, amount_placeholders, &mut self.env)?;
-
+        
+        let (phs, change) = pyro.buy_placeholders(payment, amount_placeholders, &mut self.env)?;            
+            
+        // check return
         assert_eq!( phs.amount(&mut self.env)?, Decimal::from(amount_placeholders) );
 
         if check_change
         {
             assert_eq!( change.amount(&mut self.env)?, expected_change );
-        }
+        }    
+
+        assert_eq!( phs.amount(&mut self.env)?, Decimal::from(amount_placeholders) );
+
+        // check internal state
+        let (a2, b2, _, _, _, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+
+        assert_eq!(a2, a1 - amount_placeholders);
+        assert_eq!(b2, b1 + amount_placeholders);
 
         Ok(())
     }
 
     pub fn buy_placeholders(&mut self, use_xrd:bool, amount_placeholders:u16, amount_token:Decimal) -> Result<(), RuntimeError>
-    {           
-        self.env.enable_costing_module();
+    {                   
         self.buy_placeholders_check(use_xrd, amount_placeholders, amount_token, false, Decimal::ZERO)
     }
 
@@ -266,9 +278,16 @@ impl MigrationHelper {
 
         self.get_placeholders_for_team(team_first).unwrap();
         self.get_placeholders_for_team(team_second).unwrap();
-        self.get_placeholders_for_team(team_third).unwrap();
+        self.get_placeholders_for_team(team_third).unwrap();        
             
         self.start_sale().unwrap();
+    }
+
+    pub fn set_price(&mut self, price1:Decimal, price2:Decimal, price3:Decimal, amount_stage1:u16, amount_stage2:u16) -> Result<(), RuntimeError>
+    {
+        let mut pyro = self.pyro19.unwrap();
+
+        pyro.set_price(price1, price2, price3, amount_stage1, amount_stage2, &mut self.env)
     }
 
 
