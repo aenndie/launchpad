@@ -48,7 +48,7 @@ mod pyro {
         },        
 
         methods { 
-            // Badges
+            // Badges            
             get_another_admin_badge => restrict_to: [admin, super_admin, OWNER];
             get_another_super_admin_badge => restrict_to: [super_admin, OWNER];
             get_another_owner_badge => restrict_to: [OWNER];
@@ -57,8 +57,7 @@ mod pyro {
             mint_nft => restrict_to: [admin, super_admin, OWNER];  // hot wallet
             mint_individual_nft_and_return_for_giveaway => restrict_to: [admin, super_admin, OWNER]; // 
             get_placeholders_for_team => restrict_to: [super_admin, OWNER]; //             
-            
-            
+                        
             // Stati
             set_status_minting_finished => restrict_to: [super_admin, OWNER];       
             set_sale_started => restrict_to: [super_admin, OWNER];  
@@ -75,8 +74,8 @@ mod pyro {
             
             // Sale USD
             set_buffer_usd_sale => restrict_to: [super_admin, OWNER];             
-            get_nfts_for_usd_sale => restrict_to: [admin, super_admin, OWNER];
             reserve_nfts_for_usd_sale => restrict_to: [admin, super_admin, OWNER];            
+            get_nfts_for_usd_sale => restrict_to: [admin, super_admin, OWNER];            
             
             // Earnings
             get_xrd => restrict_to: [OWNER];             
@@ -89,6 +88,7 @@ mod pyro {
             set_check_assertions => restrict_to: [admin, super_admin, OWNER];  
             set_max_assign_at_once => restrict_to: [admin, super_admin, OWNER];  
 
+            // test helper
             get_ph_bucket => PUBLIC;
             get_pyro_bucket => PUBLIC;
             get_latest_usd_price => PUBLIC;
