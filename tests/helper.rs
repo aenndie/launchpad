@@ -1,9 +1,8 @@
 //use pretty_assertions::assert_eq;
 use pyro19::test_bindings::*;
 use dummy_account::test_bindings::*;
-use scrypto::this_package; // resource::ScryptoBucket
+use scrypto::this_package;
 use scrypto_test::prelude::*;
-// use scrypto::{prelude::Vault, resource::ScryptoVault, this_package};
 
 pub struct MigrationHelper {
     pub env: TestEnvironment,
