@@ -1,5 +1,5 @@
 [package]
-name = "sale"
+name = "pyro19"
 version = "1.0.0"
 edition = "2021"
 resolver = "2"
@@ -14,7 +14,7 @@ radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1
 scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
 scrypto-test = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
 # radix-engine-interface = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-sale = { path = ".", features = ["test"] }
+pyro19 = { path = ".", features = ["test"] }
 dummy_account = { path = "./dummy_account", features = ["test"] }
 minting = { path = "./minting", features = ["test"] }
 authorization = { path = "./authorization", features = ["test"] }

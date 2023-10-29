@@ -1,5 +1,5 @@
 //use pretty_assertions::assert_eq;
-use sale::test_bindings::*;
+use pyro19::test_bindings::*;
 use minting::test_bindings::*;
 use authorization::test_bindings::*;
 use dummy_account::test_bindings::*;
