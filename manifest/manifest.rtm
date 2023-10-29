@@ -1,0 +1,138 @@
+package_tdx_2_1p4ht8egtqy7447ytmashghs7es6326ryfg2kuknvah92ukz0ey967x
+
+CALL_FUNCTION
+    Address("package_tdx_2_1p4ht8egtqy7447ytmashghs7es6326ryfg2kuknvah92ukz0ey967x")
+    "Pyro"
+    "instantiate_pyro"
+    Decimal("20.0")
+    "1st collection"
+	"Pyros World - Test 4.10.23"
+	"Fully 3D and metaverse-ready NFTs with genuine utility."
+	"https://www.pyrosworld.com"
+	"https://test.pyros-world.com/img/favicon.png"
+	"Pyros World - Placeholders Test 4.10.23"
+	"These are anonymous placeholder NFTs needed for a real random sale. Please exchange them into real individual Pyro NFTs on our website."
+	"https://www.pyrosworld.com"
+	"https://test.pyros-world.com/img/favicon.png"
+	"This NFT is a placeholder/coupon for a real NFT. Please exchange it."
+	Array<String>( 		
+		"https://test.pyros-world.com/img/Blanko_1.jpg", 
+		"https://test.pyros-world.com/img/Blanko_2.jpg", 
+		"https://test.pyros-world.com/img/Blanko_3.jpg", 
+		"https://test.pyros-world.com/img/Blanko_4.jpg", 
+		"https://test.pyros-world.com/img/Blanko_5.jpg", 
+		"https://test.pyros-world.com/img/Blanko_6.jpg", 
+		"https://test.pyros-world.com/img/Blanko_7.jpg", 
+		"https://test.pyros-world.com/img/Blanko_8.jpg" 
+	)
+	100u16
+	10u16
+	25u16
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")	
+	50u16
+	20u16;
+CALL_METHOD
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
+	"deposit_batch"
+	Expression("ENTIRE_WORKTOP");
+	
+https://stokenet-dashboard.radixdlt.com/transaction/txid_tdx_2_12h6z6h97epuddcfpt7gvhwtq3j2n9arzudxhg6gj5yna8jx83arqf27x7s/details
+
+xxx
+
+component_tdx_e_1cpjht5kcxnzf5kky7d062a202ndnxf652zfn7qhx8urcyklwuccnpy
+
+resource_tdx_e_1thxctn4hareujjpnk2zw3yslqthzf26jhev9d7c4kmf7ud7hepggw8
+resource_tdx_e_1tkx335vkxfx844v6luxkjrajh6lelw7valamvxqma32az9507sapmq
+resource_tdx_e_1tkwcr22e2qdpg0xv9usea072q92m5dvptlfle0edm55hln9x9dxxgg
+
+resource_tdx_e_1nthn7xuhvzp3r5r2qddcgd0xwz0psce7zgyz3vr6zw26swuchmmty9
+resource_tdx_e_1nt7729t8lr66cgj7he53lgd7v7z74c0p53st4ze0sdwct7w4zj07n6
+
+***********************************
+
+get_another_admin_badge
+
+Admin Badge 
+resource_tdx_d_1t5t8uazcz9eenfe0pqrmlm800q2paxh8gq3j9ah5mhm9pxf39ajjnw
+
+Account
+account_tdx_d_129xunflkmeawh0rwd7h8prkv6zzh6ykkg4l0jcz94cqhafdc7km7km
+
+HotWallet
+account_tdx_d_16xkq7p7fk3l74ufmq3xlw6rl2yc9t7y2362d5afqxmv9494cwm6pm3
+
+CALL_METHOD
+	Address("account_tdx_d_129xunflkmeawh0rwd7h8prkv6zzh6ykkg4l0jcz94cqhafdc7km7km")
+	"create_proof_of_amount"
+	Address("resource_tdx_d_1t5t8uazcz9eenfe0pqrmlm800q2paxh8gq3j9ah5mhm9pxf39ajjnw")
+    Decimal("1");
+CALL_METHOD
+	Address("component_tdx_d_1cqrv5qlea9qmg5hjzj3t8xheevq00gmydaqafum5dcxkuqvea84xde")
+	"get_another_admin_badge";    
+CALL_METHOD
+	Address("account_tdx_d_16xkq7p7fk3l74ufmq3xlw6rl2yc9t7y2362d5afqxmv9494cwm6pm3")
+	"try_deposit_batch_or_abort"
+	Expression("ENTIRE_WORKTOP");
+
+***********************************    
+
+set xxx true/false;
+
+CALL_METHOD
+	Address("account_tdx_e_12yplw6vnznlcht3e5pvgs703lrdn3a8sanyrlnxqt2dyc9h28dr0kd")
+	"create_proof_of_amount"
+	Address("resource_tdx_d_1t5t8uazcz9eenfe0pqrmlm800q2paxh8gq3j9ah5mhm9pxf39ajjnw")
+    Decimal("1");
+CALL_METHOD
+	Address("...")
+	"set_check_assertions"
+	true/false;
+CALL_METHOD
+	Address("account_tdx_e_12yplw6vnznlcht3e5pvgs703lrdn3a8sanyrlnxqt2dyc9h28dr0kd")
+	"try_deposit_batch_or_abort"
+	Expression("ENTIRE_WORKTOP")
+	None;
+
+
+***********************************    
+dApp Definition
+
+Name: Pyros World 
+Desc: Fully 3D and metaverse-ready NFTs with genuine utility.
+Website URL: https://pyrosworld.com --> without / after com
+
+Linked entities: 
+- 2 component addresses sale and trading
+- 3 resource addresses pyro nfts, placeholder and trading coupons 
+
+
+https://discordapp.com/channels/417762285172555786/1149738132472868995/1149788317110505492
+It should be GlobalAddress:from(dapp_definition_address) assuming you're passing the dapp definition address as an argument
+
+
+
+
+Set metadata dApp-> component:
+
+SET_METADATA
+    Address("account_tdx_e_12yplw6vnznlcht3e5pvgs703lrdn3a8sanyrlnxqt2dyc9h28dr0kd")
+    "claimed_entities"
+    Enum<136u8>(
+        Array<Address>(
+            Address("component_tdx_e_1cqwakw6rhaj9fme2zlff6jzm5ksm8pc97dmgrg2725c7dkspd3833t"), 
+			Address("component_tdx_e_1cqs09h7wsexmu8fmn4uveky256nvgnkcslcujyawd2u7yu6vds0scm"), 
+			Address("component_tdx_e_1crqvpgepzky9pwrlhfmycpchheddddvu7xgfm76s4rhd6xnp08lu2s"), 			
+			Address("component_tdx_e_1cpqksfv87dqgw7mzgnacryu6ge8jsa8glzfnmtzvmyxd2kfxaydgwj"), 						
+        )
+    )
+;
+
+icon_url
+
+SET_METADATA
+    Address("account_tdx_e_12yplw6vnznlcht3e5pvgs703lrdn3a8sanyrlnxqt2dyc9h28dr0kd")
+    "icon_url"
+	Enum<Metadata::Url>("https://test.pyros-world.com/img/favicon.png");
+
+

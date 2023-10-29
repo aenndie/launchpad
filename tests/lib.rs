@@ -2,18 +2,23 @@ mod helper;
 use scrypto_test::prelude::*;
 use helper::*;
 
-/*
+
+const POS_DIFF_1:Decimal = dec!("1");
+
+const POS_DIFF_ATO:Decimal = dec!("0.000000000000000001"); // 10^-18
+
+
 #[test]
 fn tc_0_0_just_instantiate() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();   // should succeed 
 }
+
 
 #[test]
 #[should_panic]
@@ -25,14 +30,12 @@ fn tc_1_1_1_sale_must_be_started_case_is_not_started() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
-
-    helper.mint_dummy_nfts(100);
-    helper.set_status_minting_finished().unwrap();    
-    helper.get_placeholders_for_team(10).unwrap();                
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_dummy_nfts(collection_size, team_amount).unwrap();    
 
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  1u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should fail since sale not started
 }
 
 #[test]
@@ -44,16 +47,16 @@ fn tc_1_1_2_sale_must_be_started_case_is_started() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
 
-    helper.mint_dummy_nfts(100);
-    helper.set_status_minting_finished().unwrap();    
-    helper.get_placeholders_for_team(10).unwrap();                
+    helper.mint_dummy_nfts(collection_size, team_amount).unwrap();    
+
     helper.start_sale().unwrap();
 
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  1u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should succeed now
 }
+
 
 #[test]
 #[should_panic]
@@ -65,18 +68,16 @@ fn tc_1_1_3_sale_must_be_started_case_is_paused() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
 
-    helper.mint_dummy_nfts(100);
-    helper.set_status_minting_finished().unwrap();    
-    helper.get_placeholders_for_team(10).unwrap();                
+    helper.mint_dummy_nfts(collection_size, team_amount).unwrap();    
+
     helper.start_sale().unwrap();
     helper.pause_sale().unwrap();
 
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  1u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should fail since sale paused
 }
-
 
 #[test]
 #[should_panic]
@@ -88,14 +89,15 @@ fn tc_1_2_1_payment_must_be_xrd_case_neq_xrd() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(false,  1u16, amount_token).unwrap();
+    helper.buy_placeholders(false,  1u16, amount_token).unwrap(); // should fail
 
 }
+
 
 #[test]
 fn tc_1_2_2_payment_must_be_xrd_case_eq_xrd() {    
@@ -106,12 +108,12 @@ fn tc_1_2_2_payment_must_be_xrd_case_eq_xrd() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
         
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  1u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should succeed now since we pay with XRD
 }
 
 #[test]
@@ -123,13 +125,13 @@ fn tc_1_3_1_buy_max_amount_case_max() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
         
     // max amount per buy is 50    
     let amount_token = 50*price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  50u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  50u16, amount_token).unwrap(); // should succeed 
 }
 
 #[test]
@@ -142,13 +144,13 @@ fn tc_1_3_2_buy_max_amount_case_max_plus_1() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = 51*price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  51u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  51u16, amount_token).unwrap(); // should fail
 }
 
 #[test]
@@ -161,13 +163,13 @@ fn tc_1_4_1_buy_amount_positive_case_zero() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  0u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  0u16, amount_token).unwrap(); // should fail
 }
 
 // tc_1_4_2 is not necessary since parameter amount:u16 is unsigned
@@ -181,13 +183,13 @@ fn tc_1_4_3_buy_amount_positive_case_one() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = price * helper.latest_usd_price;                
-    helper.buy_placeholders(true,  1u16, amount_token).unwrap();
+    helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should succeed
 }
 
 #[test]
@@ -199,18 +201,19 @@ fn tc_1_5_1_payment_enough_case_exact() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = 5*price * helper.latest_usd_price;                
     helper.buy_placeholders(true,  5u16, amount_token).unwrap();
 }
 
+
 #[test]
 #[should_panic]
-fn tc_1_5_2_payment_enough_case_too_little() {    
+fn tc_1_5_2_payment_enough_case_too_little_1() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -218,12 +221,31 @@ fn tc_1_5_2_payment_enough_case_too_little() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
-    let amount_token = 5*price * helper.latest_usd_price - dec!("0.0001");                
+    let amount_token = 5*price * helper.latest_usd_price - POS_DIFF_1;                
+    helper.buy_placeholders(true,  5u16, amount_token).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tc_1_5_3_payment_enough_case_too_little_ato() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // max amount per buy is 50    
+    let amount_token = 5*price * helper.latest_usd_price - POS_DIFF_ATO;                
     helper.buy_placeholders(true,  5u16, amount_token).unwrap();
 }
 
@@ -239,9 +261,9 @@ fn tc_1_7_1_change_is_correct_case_zero() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = 5*price * helper.latest_usd_price;                
@@ -257,9 +279,9 @@ fn tc_1_7_2_change_is_correct_case_pos() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = 5*price * helper.latest_usd_price + dec!("1.2345");                
@@ -267,8 +289,7 @@ fn tc_1_7_2_change_is_correct_case_pos() {
 }
 
 #[test]
-#[should_panic]
-fn tc_1_7_3_change_is_correct_case_doublecheck() {    
+fn tc_1_7_3_change_is_correct_case_pos_ato() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -276,9 +297,28 @@ fn tc_1_7_3_change_is_correct_case_doublecheck() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // max amount per buy is 50    
+    let amount_token = 5*price * helper.latest_usd_price + POS_DIFF_ATO;                
+    helper.buy_placeholders_check(true,  5u16, amount_token, true, POS_DIFF_ATO ).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tc_1_7_4_change_is_correct_case_doublecheck() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // max amount per buy is 50    
     let amount_token = 5*price * helper.latest_usd_price + dec!("1.2345");                
@@ -294,16 +334,16 @@ fn tc_1_8_1_availability_case_max() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
-    // max amount available is 65 = 100 - 10 (team) - 25 (buffer) = 50 + 15
+    // max amount available is 100 - 10 (team) - 0 (buffer) = 90
     let amount_token = 50*price * helper.latest_usd_price ;                
     helper.buy_placeholders(true,  50u16, amount_token).unwrap();
 
-    let amount_token = 15*price * helper.latest_usd_price ;                
-    helper.buy_placeholders(true,  15u16, amount_token).unwrap();
+    let amount_token = 40*price * helper.latest_usd_price ;                
+    helper.buy_placeholders(true,  40u16, amount_token).unwrap(); //should succeed
 }
 
 #[test]
@@ -316,16 +356,16 @@ fn tc_1_8_2_availability_case_max_plus_1() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
-    // max amount available is 65 = 100 - 10 (team) - 25 (buffer) = 50 + 15
+    // max amount available is 90 = 100 - 10 (team) - 0 (buffer) = 90
     let amount_token = 50*price * helper.latest_usd_price ;                
     helper.buy_placeholders(true,  50u16, amount_token).unwrap();
 
-    let amount_token = 16*price * helper.latest_usd_price ;                
-    helper.buy_placeholders(true,  16u16, amount_token).unwrap();
+    let amount_token = 41*price * helper.latest_usd_price ;                
+    helper.buy_placeholders(true,  41u16, amount_token).unwrap(); // should fail since 91 > 90
 }
  
 #[test]
@@ -337,9 +377,9 @@ fn tc_1_9_1_price_correct_case_range1() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // set price stages here: 15-20-25 USD for 10-20-100
     helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
@@ -358,9 +398,9 @@ fn tc_1_9_2_price_correct_case_range1_and_range_2() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // set price stages here: 15-20-25 USD for 10-20-100
     helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
@@ -379,9 +419,9 @@ fn tc_1_9_3_price_correct_case_range1_and_range2_and_range3() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // set price stages here: 15-20-25 USD for 10-20-100
     helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
@@ -400,9 +440,9 @@ fn tc_1_9_4_price_correct_case_range2() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // set price stages here: 15-20-25 USD for 10-20-100
     helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
@@ -425,9 +465,9 @@ fn tc_1_9_5_price_correct_case_range2_and_range3() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // set price stages here: 15-20-25 USD for 10-20-100
     helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
@@ -450,9 +490,9 @@ fn tc_1_9_6_price_correct_case_range3() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // set price stages here: 15-20-25 USD for 10-20-100
     helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
@@ -466,6 +506,46 @@ fn tc_1_9_6_price_correct_case_range3() {
     helper.buy_placeholders_check(true,  45u16, amount_token, true, dec!("0.0")).unwrap();    
 }
 
+#[test]
+fn tc_1_11_1_availability_case_max() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // max amount available is 100 - 10 (team) - 0 (buffer) = 90
+    let amount_token = 50*price * helper.latest_usd_price ;                
+    helper.buy_placeholders(true,  50u16, amount_token).unwrap();
+
+    helper.reserve_nfts_for_usd_sale("CP001".to_owned(), 40).unwrap(); //should succeed
+}
+
+#[test]
+#[should_panic]
+fn tc_1_11_2_availability_case_max_plus_1() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // max amount available is 90 = 100 - 10 (team) - 0 (buffer) = 90
+    let amount_token = 50*price * helper.latest_usd_price ;                
+    helper.buy_placeholders(true,  50u16, amount_token).unwrap();
+
+    helper.reserve_nfts_for_usd_sale("CP001".to_owned(), 41).unwrap(); //should fail
+}
 
 #[test]
 #[should_panic]
@@ -473,15 +553,14 @@ fn tc_2_1_1_set_price_case_no_proof() {
 
     let mut helper = MigrationHelper::new().unwrap();   
 
-    let collection_size = 100u16;     
-    let team_amount = 10u16;
+    let collection_size = 100u16;         
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
     helper.env.enable_auth_module();     
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should fail       
 }
 
 
@@ -491,14 +570,13 @@ fn tc_2_1_2_set_price_case_auth_disabled() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
     helper.env.disable_auth_module();     
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should succeed now       
 }
 
 //todo 2_1_3 how to create proof?
@@ -512,14 +590,13 @@ fn tc_2_2_2_price_zero_case_price1_zero() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
     helper.env.disable_auth_module();     
 
-    helper.set_price(dec!("0"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("0"), dec!("20"), dec!("25"), 10, 20 ).unwrap();    // should fail    
 }
 
 #[test]
@@ -529,12 +606,11 @@ fn tc_2_3_2_price_zero_case_price2_zero() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
 
-    helper.set_price(dec!("15"), dec!("0"), dec!("25"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("15"), dec!("0"), dec!("25"), 10, 20 ).unwrap();     // should fail
 }
 
 #[test]
@@ -544,12 +620,11 @@ fn tc_2_4_2_price_zero_case_price3_zero() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("0"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("0"), 10, 20 ).unwrap();   // should fail     
 }
 
 #[test]
@@ -559,14 +634,13 @@ fn tc_2_2_3_price_zero_case_price1_neg() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
     helper.env.disable_auth_module();     
 
-    helper.set_price(dec!("-1"), dec!("20"), dec!("25"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("-1"), dec!("20"), dec!("25"), 10, 20 ).unwrap();      // should fail  
 }
 
 #[test]
@@ -576,12 +650,11 @@ fn tc_2_3_3_price_zero_case_price2_neg() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
 
-    helper.set_price(dec!("15"), dec!("-1"), dec!("25"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("15"), dec!("-1"), dec!("25"), 10, 20 ).unwrap();      // should fail  
 }
 
 #[test]
@@ -591,12 +664,11 @@ fn tc_2_4_3_price_zero_case_price3_neg() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("-1"), 10, 20 ).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("-1"), 10, 20 ).unwrap();       // should fail 
 }
 
 #[test]
@@ -606,12 +678,11 @@ fn tc_2_5_2_price_stage_1_case_zero() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 0, 20).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 0, 20).unwrap();        // should succeed
 }
 
 #[test]
@@ -620,12 +691,11 @@ fn tc_2_6_2_price_stage_2_case_eq_stage1() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 10).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 10).unwrap();       // should succeed - is allowed 
 }
 
 #[test]
@@ -635,12 +705,11 @@ fn tc_2_6_3_price_stage_2_case_lt_stage1() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 9).unwrap();        
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 9).unwrap();        // should fail
 }
 
 #[test]
@@ -649,30 +718,28 @@ fn tc_2_6_4_price_stage_2_case_eq_coll_size() {
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 100).unwrap();
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 100).unwrap();   // should succeed
 }
 
+
+
 #[test]
-#[should_panic]
+// #[should_panic] --> we allow this, it just means to skip price stage 3 -> but we need to test price range for this
 fn tc_2_6_5_price_stage_2_case_gr_coll_size() {
 
     let mut helper = MigrationHelper::new().unwrap();   
 
     let collection_size = 100u16;     
-    let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();
+    helper.instantiate(collection_size,  price).unwrap();
 
-    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 101).unwrap();
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 101).unwrap(); // should succeed as well
 }
-
-
 
  #[test]
  #[should_panic]
@@ -684,9 +751,9 @@ fn tc_3_1_1_assign_placeholder_case_no_proof() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
     
     // buy 5 phs
     let amount_token = 5 * 20 * helper.latest_usd_price;
@@ -695,7 +762,7 @@ fn tc_3_1_1_assign_placeholder_case_no_proof() {
     // assign phs
     helper.env.enable_auth_module();
     
-    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap(); // should fail
     
     helper.env.disable_auth_module();
 }
@@ -709,16 +776,16 @@ fn tc_3_1_2_assign_placeholder_case_auth_mod_disabled() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
     
     // buy 5 phs
     let amount_token = 5 * 20 * helper.latest_usd_price;
-    helper.buy_placeholders(true,  5, amount_token).unwrap();
+    helper.buy_placeholders(true,  5, amount_token).unwrap(); 
     
     // assign phs        
-    helper.assign_placeholders_to_nfts().unwrap();    
+    helper.assign_placeholders_to_nfts().unwrap();    // should succeed
 }
 
 
@@ -732,18 +799,18 @@ fn tc_3_2_1_same_transaction_case_buy_ph() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.mint_till_start_sale(100, 10);
+    helper.mint_till_start_sale(100, team_amount).unwrap();
     
     // buy 5 phs
     let amount_token = 5 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  5, amount_token).unwrap();
     
     // assign phs        
-    helper.set_do_check_for_same_transaction(true);
-    helper.assign_placeholders_to_nfts().unwrap();    
-    helper.set_do_check_for_same_transaction(false);
+    helper.set_do_check_for_same_transaction(true).unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();    // should fail
+    helper.set_do_check_for_same_transaction(false).unwrap();
 }
 
 #[test]
@@ -756,16 +823,16 @@ fn tc_3_2_2_same_transaction_case_team() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();    
+    helper.instantiate(collection_size,  price).unwrap();    
     
-    helper.set_do_check_for_same_transaction(true);    
+    helper.set_do_check_for_same_transaction(true).unwrap();    
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     helper.assign_placeholders_to_nfts().unwrap();    
     
-    helper.set_do_check_for_same_transaction(false);
+    helper.set_do_check_for_same_transaction(false).unwrap();
 }
 
 #[test]
@@ -778,19 +845,20 @@ fn tc_3_3_0_amount_mapped_case_doublecheck() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // buy 5 phs
     let amount_token = 5 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  5, amount_token).unwrap();
 
-    // expect 5 phs to be assignd: 10 team pyros were assigned while starting sale
-    // so 4 should fail
-    helper.assign_placeholders_to_nfts_check(true, 4).unwrap();            
+    // expect 5 phs to be assignd: 10 team pyros + 5 new ones
+    // so 14 should fail
+    helper.assign_placeholders_to_nfts_check(true, 14).unwrap();            
 }
+
 
 
 // max amount for mapping at once is set to 20
@@ -804,12 +872,15 @@ fn tc_3_3_1_amount_mapped_case_lt_max() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
-    // buy 5 phs
+    // assign (10) placeholders kept outside
+    helper.assign_placeholders_to_nfts().unwrap();
+
+    // buy 19 phs
     let amount_token = 19 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  19, amount_token).unwrap();
 
@@ -818,7 +889,7 @@ fn tc_3_3_1_amount_mapped_case_lt_max() {
 }
 
 #[test]
-fn tc_3_3_1_amount_mapped_case_eq_max() {    
+fn tc_3_3_2_amount_mapped_case_eq_max() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -826,10 +897,10 @@ fn tc_3_3_1_amount_mapped_case_eq_max() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // buy 20 phs
     let amount_token = 20 * 20 * helper.latest_usd_price;
@@ -840,7 +911,7 @@ fn tc_3_3_1_amount_mapped_case_eq_max() {
 }
 
 #[test]
-fn tc_3_3_1_amount_mapped_case_gt_max() {    
+fn tc_3_3_3_amount_mapped_case_gt_max() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -848,10 +919,10 @@ fn tc_3_3_1_amount_mapped_case_gt_max() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     // buy 21 phs
     let amount_token = 21 * 20 * helper.latest_usd_price;
@@ -870,10 +941,10 @@ fn check_if_storing_phs_works() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     helper.expect_phs_in_bucket(dec!("10")).unwrap();
 
@@ -881,12 +952,13 @@ fn check_if_storing_phs_works() {
     let amount_token = 21 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  21, amount_token).unwrap();
 
+    // we expect 21 + 10 (team)
     helper.expect_phs_in_bucket(dec!("31")).unwrap();
 }
 
 #[test]
 #[should_panic]
-fn check_if_storing_phs_double_check1() {    
+fn check_if_storing_phs_works_double_check1() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -894,23 +966,17 @@ fn check_if_storing_phs_double_check1() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
-    helper.expect_phs_in_bucket(dec!("11")).unwrap(); // should fail
-
-    // buy 21 phs
-    let amount_token = 21 * 20 * helper.latest_usd_price;
-    helper.buy_placeholders(true,  21, amount_token).unwrap();
-
-    helper.expect_phs_in_bucket(dec!("31")).unwrap();
+    helper.expect_phs_in_bucket(dec!("11")).unwrap(); // should fail    
 }
 
 #[test]
 #[should_panic]
-fn check_if_storing_phs_double_check2() {    
+fn check_if_storing_phs_works_double_check2() {    
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -918,10 +984,10 @@ fn check_if_storing_phs_double_check2() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
     
-    // get_phs_for_team is called within this method
-    helper.mint_till_start_sale(100, 10);
+    // placeholders for team were not put into SC
+    helper.mint_till_start_sale(100, team_amount).unwrap();
 
     helper.expect_phs_in_bucket(dec!("10")).unwrap();
 
@@ -942,9 +1008,9 @@ fn tc_4_1_1_change_phs_not_all_phs_mapped_case_not_assigned_at_all() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 10 phs
     let amount_token = 10 * 20 * helper.latest_usd_price;
@@ -963,17 +1029,22 @@ fn tc_4_1_2_change_phs_not_all_phs_mapped_case_only_once_assigned_but_two_needed
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
-        
-    helper.mint_till_start_sale(100, 10);    
+    helper.instantiate(collection_size,  price).unwrap();            
+
+    // this will leave 10 phs unassigned    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 60 phs
     let amount_token = 30 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  30, amount_token).unwrap();
     helper.buy_placeholders(true,  30, amount_token).unwrap();
     
-    // assign once
-    helper.assign_placeholders_to_nfts().unwrap();    
+    // 10 for team kept outside = 70 in total
+    
+    // assign phs: 4x needed since we only assign 20 at once for testing
+    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();
 
     // change 1
     helper.change_placeholders_into_nfts(1).unwrap(); // should fail since previous assign could not assign all
@@ -988,16 +1059,19 @@ fn tc_4_1_3_change_phs_all_phs_mapped_case_call_twice() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 60 phs
     let amount_token = 30 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  30, amount_token).unwrap();
     helper.buy_placeholders(true,  30, amount_token).unwrap();
+
+    // 10 for team kept outside = 70 in total
     
-    // assign phs: 3x needed since we only assign 20 at once for testing
+    // assign phs: 4x needed since we only assign 20 at once for testing
+    helper.assign_placeholders_to_nfts().unwrap();
     helper.assign_placeholders_to_nfts().unwrap();
     helper.assign_placeholders_to_nfts().unwrap();
     helper.assign_placeholders_to_nfts().unwrap();
@@ -1008,7 +1082,7 @@ fn tc_4_1_3_change_phs_all_phs_mapped_case_call_twice() {
 
 
 #[test]
-//#[should_panic]
+#[should_panic]
 fn tc_4_2_1_change_phs_case_amount_zero() {
 
     let mut helper = MigrationHelper::new().unwrap();        
@@ -1017,9 +1091,9 @@ fn tc_4_2_1_change_phs_case_amount_zero() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 30 phs
     let amount_token = 10 * 20 * helper.latest_usd_price;
@@ -1042,9 +1116,9 @@ fn tc_4_3_1_change_phs_max_amount_case_eq_max() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 2x30 phs
     let amount_token = 30 * 20 * helper.latest_usd_price;
@@ -1055,8 +1129,9 @@ fn tc_4_3_1_change_phs_max_amount_case_eq_max() {
     helper.assign_placeholders_to_nfts().unwrap();    
     helper.assign_placeholders_to_nfts().unwrap();    
     helper.assign_placeholders_to_nfts().unwrap();    
+    helper.assign_placeholders_to_nfts().unwrap();    
 
-    // change 0
+    // change 50
     helper.change_placeholders_into_nfts(50).unwrap(); // should succeed
 }
 
@@ -1071,9 +1146,9 @@ fn tc_4_3_2_change_phs_max_amount_case_eq_max_plus1() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 2x30 phs
     let amount_token = 30 * 20 * helper.latest_usd_price;
@@ -1084,12 +1159,11 @@ fn tc_4_3_2_change_phs_max_amount_case_eq_max_plus1() {
     helper.assign_placeholders_to_nfts().unwrap();    
     helper.assign_placeholders_to_nfts().unwrap();    
     helper.assign_placeholders_to_nfts().unwrap();    
+    helper.assign_placeholders_to_nfts().unwrap();    
 
-    // change 0
+    // change 51
     helper.change_placeholders_into_nfts(51).unwrap(); // should fail 
 }
-
-*/
 
 #[test]
 fn tc_4_4_2_change_phs_case_bucket_larger_than_needed() {
@@ -1100,9 +1174,9 @@ fn tc_4_4_2_change_phs_case_bucket_larger_than_needed() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 10 phs
     let amount_token = 10 * 20 * helper.latest_usd_price;
@@ -1111,7 +1185,7 @@ fn tc_4_4_2_change_phs_case_bucket_larger_than_needed() {
     // assign
     helper.assign_placeholders_to_nfts().unwrap();        
 
-    // change 0
+    // change 5, but provide 10 placeholders -> get 5 back
     helper.expect_phs_in_bucket(dec!("20")).unwrap();
     helper.change_placeholders_into_nfts_check(dec!("10"), 5).unwrap(); // should succeed and we get 5 phs back
     helper.expect_phs_in_bucket(dec!("15")).unwrap(); // from team and 5 back from this call
@@ -1128,9 +1202,9 @@ fn tc_4_4_3_change_phs_case_bucket_smaller_than_needed() {
     let team_amount = 10u16;
     let price = dec!("20");
         
-    helper.instantiate(collection_size, team_amount, price).unwrap();            
+    helper.instantiate(collection_size,  price).unwrap();            
         
-    helper.mint_till_start_sale(100, 10);    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
 
     // buy 10 phs
     let amount_token = 10 * 20 * helper.latest_usd_price;
@@ -1139,6 +1213,881 @@ fn tc_4_4_3_change_phs_case_bucket_smaller_than_needed() {
     // assign
     helper.assign_placeholders_to_nfts().unwrap();        
 
-    // change 0    
+    // change 10, but only provide 5 placeholders    
     helper.change_placeholders_into_nfts_check(dec!("5"), 10).unwrap(); // should fail
+}
+
+#[test]
+#[should_panic]
+fn tc_5_1_1_reserve_nfts_case_no_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should fail
+    
+}
+
+#[test]
+fn tc_5_1_2_reserve_nfts_case_auth_disabled() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // reserve 5 pyros
+    helper.env.disable_auth_module();
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should succeed    
+}
+
+#[test]
+#[should_panic]
+fn tc_5_2_1_reserve_nfts_case_call_twice_same_code() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // 2nd call should fail
+}
+
+#[test]
+fn tc_5_2_2_reserve_nfts_case_call_twice_different_code() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 5).unwrap(); // 2nd call should succeed since different coupon
+}
+
+#[test]
+fn tc_5_3_1_reserve_nfts_case_eq_max_minus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0022222".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 29).unwrap(); // should succeed
+}
+
+
+#[test]
+fn tc_5_3_2_reserve_nfts_case_eq_max() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0022222".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 30).unwrap(); // should succeed
+}
+
+#[test]
+#[should_panic]
+fn tc_5_3_3_reserve_nfts_case_eq_max_plus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0022222".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 31).unwrap(); // should fail
+}
+
+
+#[test]
+fn tc_5_5_1_reserve_nfts_before_buy_placeholder_case_eq_max_minus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0022222".to_owned(), 30).unwrap(); 
+
+    let amount_token = 29 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true, 29, amount_token).unwrap();
+}
+
+#[test]
+fn tc_5_5_2_reserve_nfts_before_buy_placeholder_case_eq_max() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0022222".to_owned(), 30).unwrap(); 
+
+    let amount_token = 30 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true, 30, amount_token).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tc_5_5_3_reserve_nfts_before_buy_placeholder_case_eq_max_plus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // reserve 5 pyros    
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 30).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0022222".to_owned(), 30).unwrap(); 
+
+    let amount_token = 31 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true, 31, amount_token).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tc_6_1_1_get_nfts_case_no_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
+    
+}
+
+#[test]
+fn tc_6_1_2_get_nfts_case_auth_disabled() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // get 5 pyros
+    helper.env.disable_auth_module();
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should succeed    
+}
+
+#[test]
+#[should_panic]
+fn tc_6_2_1_get_nfts_case_call_twice_same_code() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // get 2x5 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // 2nd call should fail
+}
+
+#[test]
+fn tc_6_2_2_get_nfts_case_call_twice_different_code() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // get 2x 5 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 5, false).unwrap(); // 2nd call should succeed since different coupon
+}
+
+#[test]
+fn tc_6_3_1_get_nfts_case_eq_max_minus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 89 pyros
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 29, false).unwrap(); // should succeed
+}
+
+
+#[test]
+fn tc_6_3_2_get_nfts_case_eq_max() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 90 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 30, false).unwrap(); // should succeed
+}
+
+#[test]
+#[should_panic]
+fn tc_6_3_3_get_nfts_case_eq_max_plus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 91 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 31, false).unwrap(); // should fail
+}
+
+
+#[test]
+fn tc_6_5_1_get_nfts_before_buy_placeholder_case_eq_max_minus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 60 + buy 29 = 89 pyros in total   
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+
+    let amount_token = 29 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true, 29, amount_token).unwrap();
+}
+
+#[test]
+fn tc_6_5_2_get_nfts_before_buy_placeholder_case_eq_max() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 60 + buy 30 = 30 pyros in total   
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+
+    let amount_token = 30 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true, 30, amount_token).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tc_6_5_3_get_nfts_before_buy_placeholder_case_eq_max_plus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 60 + buy 31 = 91 pyros in total   
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+
+    let amount_token = 31 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true, 31, amount_token).unwrap();
+}
+
+#[test]
+fn tc_6_6_1_get_nfts_before_reserve_case_eq_max_minus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 89 pyros
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 29).unwrap(); // should succeed
+}
+
+
+#[test]
+fn tc_6_6_2_get_nfts_before_reserve_case_eq_max() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 90 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 30).unwrap(); // should succeed
+}
+
+#[test]
+#[should_panic]
+fn tc_6_6_3_get_nfts_before_reserve_case_eq_max_plus_1() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 91 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 31).unwrap(); // should fail
+}
+
+#[test]
+fn tc_6_7_1_get_nfts_case_reserve_get_same_coupon() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 61 pyros    
+    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap();     
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 31).unwrap(); 
+    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 31, true).unwrap(); // should succeed
+}
+
+#[test]
+fn tc_7_1_1_all_buy_methods_case_last_buy_enough() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");    
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
+
+    // 10 (team) + 10 (bought) placeholder
+    helper.expect_phs_in_bucket(dec!("20")).unwrap();
+    
+    // 16 NFTs
+    helper.expect_pyros_in_bucket(dec!("16")).unwrap();
+    
+    // buy 49 placeholder    
+    let amount_token = 49 * price * helper.latest_usd_price;                
+    helper.buy_placeholders(true, 49, amount_token).unwrap();
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();
+    helper.assign_placeholders_to_nfts().unwrap();
+
+    
+    // 20 + 49 = 69 placeholder
+    helper.expect_phs_in_bucket(dec!("69")).unwrap();
+    
+    // 16 NFTs
+    helper.expect_pyros_in_bucket(dec!("16")).unwrap();
+
+    // change 25 placeholder
+    helper.change_placeholders_into_nfts(25).unwrap();
+
+    // 69 - 25 = 44 placeholder
+    helper.expect_phs_in_bucket(dec!("44")).unwrap();
+    
+    // 16 + 25 = 41 NFTs
+    helper.expect_pyros_in_bucket(dec!("41")).unwrap();     
+
+    // change remaining 44 placeholder
+    helper.change_placeholders_into_nfts(44).unwrap();
+
+    // 0 placeholder
+    helper.expect_phs_in_bucket(dec!("0")).unwrap();
+    
+    // 41 + 44 = 85 NFTs
+    helper.expect_pyros_in_bucket(dec!("85")).unwrap();     
+
+    // remaining 15 are reserved
+    helper.get_nfts_for_usd_sale("CP01".to_owned(), 3, true).unwrap();
+    helper.get_nfts_for_usd_sale("CP04".to_owned(), 12, true).unwrap();
+
+    // no phs left, 100 pyro nfts
+    helper.expect_phs_in_bucket(dec!("0")).unwrap();
+    helper.expect_pyros_in_bucket(dec!("100")).unwrap();     
+}
+
+
+
+#[test]
+#[should_panic]
+fn tc_7_1_2_all_buy_methods_case_last_buy_not_enough() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");    
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
+
+    // buy 50 placeholder    
+    let amount_token = 50 * price * helper.latest_usd_price;                
+    helper.buy_placeholders(true, 50, amount_token).unwrap(); // should fail since only 49 left    
+}
+
+#[test]
+fn tc_7_2_1_all_buy_methods_case_last_reserve_enough() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");    
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
+
+    // reserve 49 placeholder        
+    helper.reserve_nfts_for_usd_sale("CP001".to_owned(), 49).unwrap(); // should succeed
+
+    helper.get_nfts_for_usd_sale("CP001".to_owned(), 49, true).unwrap(); // should succeed as well
+}
+
+#[test]
+#[should_panic]
+fn tc_7_2_2_all_buy_methods_case_last_reserve_not_enough() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");    
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
+
+    // reserve 50 placeholder        
+    helper.reserve_nfts_for_usd_sale("CP001".to_owned(), 50).unwrap(); // should succeed
+}
+
+
+
+#[test]
+fn tc_7_3_1_all_buy_methods_case_last_get_enough() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");    
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
+
+    // get 49 placeholder        
+    helper.get_nfts_for_usd_sale("CP001".to_owned(), 49, false).unwrap(); // should succeed
+}
+
+#[test]
+#[should_panic]
+fn tc_7_3_2_all_buy_methods_case_last_get_not_enough() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");    
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
+
+    // get 50 placeholder        
+    helper.get_nfts_for_usd_sale("CP001".to_owned(), 50, false).unwrap(); // should fail
+}
+
+
+#[test]
+#[should_panic]
+fn tc_8_1_1_pause_case_no_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+
+    helper.env.enable_auth_module();
+    helper.pause_sale().unwrap() // should fail 
+}
+
+
+#[test]
+fn tc_8_1_2_pause_auth_disabled() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    helper.pause_sale().unwrap(); // should succeed since auth module disabled    
+}
+
+#[test]
+#[should_panic]
+fn tc_8_2_1_pause_case_sale_not_started() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.pause_sale().unwrap() // should fail
+}
+
+
+#[test]
+#[should_panic]
+fn tc_8_3_1_pause_case_buy_placheholder_afterwards() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    helper.pause_sale().unwrap(); // should succeed since auth module disabled    
+
+    let amount_token = price * helper.latest_usd_price;                
+    helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should fail since sale paused
+}
+
+
+#[test]
+#[should_panic]
+fn tc_8_3_2_pause_case_reserve_afterwards() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    helper.pause_sale().unwrap(); // should succeed since auth module disabled    
+
+    helper.reserve_nfts_for_usd_sale("CP001".to_owned(),  1u16).unwrap(); // should fail since sale paused
+}
+
+#[test]
+#[should_panic]
+fn tc_8_3_3_pause_case_get_nfts_for_usd_afterwards_without_reservation() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    helper.pause_sale().unwrap(); // should succeed since auth module disabled    
+    
+    helper.get_nfts_for_usd_sale("CP001".to_owned(),  1u16, false).unwrap(); // should fail since sale paused
+}
+
+#[test]
+fn tc_8_3_4_pause_case_get_nfts_for_usd_afterwards_with_reservation() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;         
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    helper.reserve_nfts_for_usd_sale("CP001".to_owned(),  1u16).unwrap(); 
+
+    helper.pause_sale().unwrap(); // should succeed since auth module disabled    
+    
+    helper.get_nfts_for_usd_sale("CP001".to_owned(),  1u16, true).unwrap(); // this is explictely allowed for users having paid already
 }

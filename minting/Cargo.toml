@@ -1,5 +1,5 @@
 [package]
-name = "sale"
+name = "minting"
 version = "1.0.0"
 edition = "2021"
 resolver = "2"
@@ -13,21 +13,7 @@ transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.
 radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
 scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
 scrypto-test = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-# radix-engine-interface = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
-sale = { path = ".", features = ["test"] }
-dummy_account = { path = "./dummy_account", features = ["test"] }
-minting = { path = "./minting", features = ["test"] }
-authorization = { path = "./authorization", features = ["test"] }
-pretty_assertions = "1.4.0"
-
-
-[profile.release]
-opt-level = 'z'        # Optimize for size.
-lto = true             # Enable Link Time Optimization.
-codegen-units = 1      # Reduce number of codegen units to increase optimizations.
-panic = 'abort'        # Abort on panic.
-strip = true           # Strip the symbols.
-overflow-checks = true # Panic in the case of an overflow.
+radix-engine-interface = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v1.0.1" }
 
 [features]
 default = []
@@ -36,6 +22,5 @@ test = []
 [lib]
 crate-type = ["cdylib", "lib"]
 
-[workspace]
 # Set the package crate as its own empty workspace, to hide it from any potential ancestor workspace
 # Remove this [workspace] section if you intend the package to be part of a Cargo workspace
