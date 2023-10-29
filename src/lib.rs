@@ -7,6 +7,18 @@ pub enum StatusSale {
     SalePaused,
 }
 
+#[derive(ScryptoSbor, PartialEq)]
+pub enum PriceStrategy {
+    Runtime,
+    Manual(Decimal)
+}
+
+#[derive(ScryptoSbor, PartialEq)]
+pub enum CouponState {
+    Reserved(u16),
+    Claimed(u16)
+}
+
 #[blueprint]
 mod pyrosale {    
 
@@ -33,11 +45,11 @@ mod pyrosale {
             // Buying with XRD
             buy_placeholders => PUBLIC;             
             assign_placeholders_to_nfts => restrict_to: [admin, super_admin, OWNER];             
-            change_placeholders_into_nfts => PUBLIC;
+            swap_placeholders => PUBLIC;
             
             // Sale USD            
             reserve_nfts_for_usd_sale => restrict_to: [admin, super_admin, OWNER];            
-            get_nfts_for_usd_sale => restrict_to: [admin, super_admin, OWNER];            
+            claim_nfts_for_usd_sale => restrict_to: [admin, super_admin, OWNER];            
             
             // Earnings            
             withdraw_xrd => restrict_to: [OWNER];             
@@ -74,8 +86,9 @@ mod pyrosale {
             amount_stage1: u16, 
             amount_stage2: u16,         
 
-            use_manual_usd_price: bool,
-            manual_usd_price: Decimal,                 
+            price_strategy: PriceStrategy,
+            // use_manual_usd_price: bool,
+            // manual_usd_price: Decimal,                 
 
             // vaults
             pyro_nfts_vault : Vault,       
@@ -96,7 +109,7 @@ mod pyrosale {
             cap_left_sale: Decimal,                 // = placeholder_nfts_vault.amount() - sold_usd_just_reserved     
 
             // coupons
-            coupons: KeyValueStore<String, bool>,   // make sure coupon code is not redeemed twice (so method is not called twice for same coupon)                                 
+            coupons: KeyValueStore<String, CouponState>,   // make sure coupon code is not redeemed twice (so method is not called twice for same coupon)                                 
 
             // for disallowing assign_placeholders with getting placeholders in one transaction
             last_random_based_on_trans_hash: u32,             
@@ -144,8 +157,7 @@ mod pyrosale {
                 amount_stage1: 0, 
                 amount_stage2: 0, 
 
-                use_manual_usd_price:false,
-                manual_usd_price: Decimal::ZERO, 
+                price_strategy: PriceStrategy::Runtime, 
 
                 pyro_nfts_vault: Vault::new(pyro_nfts_address),
                 placeholder_nfts_vault: Vault::new(placeholder_nfts_address), 
@@ -319,7 +331,7 @@ mod pyrosale {
             self.check_assertions();
         }        
 
-        fn get_nr_based_on_trans_hash() ->u32
+        fn transaction_hash_to_number() ->u32
         {
             let hash = Runtime::transaction_hash();                        
 
@@ -336,7 +348,7 @@ mod pyrosale {
 
         fn get_random_nr(&mut self, max:u32) -> u32 {
             
-            let random = Self::get_nr_based_on_trans_hash();
+            let random = Self::transaction_hash_to_number();
                                    
             let number = random % max;
 
@@ -462,13 +474,13 @@ mod pyrosale {
             let total_price_usd =   use_stage1 * self.price_nft_usd_stage1 + 
                                              use_stage2 * self.price_nft_usd_stage2 +
                                              use_stage3 * self.price_nft_usd_stage3;
-            
-            let mut usd_price = self.manual_usd_price;
-
-            if !self.use_manual_usd_price
+                                
+            let usd_price = match self.price_strategy 
             {
-                usd_price = Runtime::get_usd_price();
-            }
+                PriceStrategy::Runtime => Runtime::get_usd_price(), 
+                PriceStrategy::Manual( manual_price) => manual_price,                 
+            };
+
             
             assert!(usd_price > Decimal::ZERO, "USD price must be greater than zero.");
             
@@ -522,7 +534,7 @@ mod pyrosale {
         }
         
         // change placeholders into real pyro nfts
-        pub fn change_placeholders_into_nfts(&mut self, placeholders: Bucket, amount: u16) -> (NonFungibleBucket, Bucket) {                                     
+        pub fn swap_placeholders(&mut self, placeholders: Bucket, amount: u16) -> (NonFungibleBucket, Bucket) {                                     
             
             assert!(amount > 0, "Amount should be greater than zero, but is {}.", amount);            
             assert!(amount<=self.max_amount_nfts_per_buy_or_change, "You can only chage {} Placeholderss at once.", self.max_amount_nfts_per_buy_or_change);
@@ -608,7 +620,7 @@ mod pyrosale {
 
             if allowed
             {
-                self.coupons.insert(coupon_code, false); //false = only reseverd, not yet redeemed.
+                self.coupons.insert(coupon_code, CouponState::Reserved(amount)); //false = only reseverd, not yet redeemed.
             }
             else
             {
@@ -620,7 +632,7 @@ mod pyrosale {
         }
         
         // get nfts for sending them to coupon owners
-        pub fn get_nfts_for_usd_sale(&mut self, coupon_code:String, amount: u16, max_assign_at_once:u16) -> Bucket
+        pub fn claim_nfts_for_usd_sale(&mut self, coupon_code:String, amount: u16, max_assign_at_once:u16) -> Bucket
         {                                       
             assert!(amount > 0, "Amount should be greater than zero, but is {}.", amount);            
                         
@@ -636,9 +648,9 @@ mod pyrosale {
             let allowed:bool;
 
             match coupon_bool {
-                Some(claimed)=>
+                Some(state)=>
                 {
-                    allowed = !claimed;   // coupon was only used to reserve NFTs, but NFTs were not yet returned
+                    allowed = state==CouponState::Reserved(amount);   // coupon was only used to reserve NFTs, but NFTs were not yet claimed
 
                     if allowed 
                     {
@@ -661,18 +673,18 @@ mod pyrosale {
 
             if allowed
             {
-                self.coupons.insert(coupon_code, true);
+                self.coupons.insert(coupon_code, CouponState::Claimed(amount));
             }
             else
             {
-                assert!(allowed, "Coupon code {} was already redeemed.", coupon_code);
+                assert!(allowed, "Coupon code {} was already redeemed or amounts do mismatch.", coupon_code);
             }                                            
 
             let phs = self.get_placeholders(amount);
 
             self.assign_placeholders_to_nfts(max_assign_at_once);
 
-            let (nfts, placeholders_left) = self.change_placeholders_into_nfts(phs, amount);
+            let (nfts, placeholders_left) = self.swap_placeholders(phs, amount);
 
             assert!(placeholders_left.is_empty(), "There should be no placeholders left, but there are {} left.", placeholders_left.amount());    
 
@@ -708,13 +720,13 @@ mod pyrosale {
 
         fn set_last_random_based_on_trans_hash(&mut self)
         {
-            self.last_random_based_on_trans_hash = Self::get_nr_based_on_trans_hash();
+            self.last_random_based_on_trans_hash = Self::transaction_hash_to_number();
         }
 
         fn check_for_same_transaction(&mut self)
         {
             let latest_trans = self.last_random_based_on_trans_hash;
-            let this_trans = Self::get_nr_based_on_trans_hash();
+            let this_trans = Self::transaction_hash_to_number();
 
             if self.do_check_for_same_transaction
             {
@@ -746,14 +758,13 @@ mod pyrosale {
                         
             assert!(manual_usd_price > Decimal::ZERO, "Price must be greater than zero.");              
 
-            self.use_manual_usd_price = true;
-            self.manual_usd_price = manual_usd_price;
+            self.price_strategy = PriceStrategy::Manual(manual_usd_price);            
             self.latest_usd_price = manual_usd_price;
         }
 
         pub fn use_runtime_usd_price(&mut self) {                                                
 
-            self.use_manual_usd_price = false;            
+            self.price_strategy = PriceStrategy::Runtime;            
 
             self.latest_usd_price = Runtime::get_usd_price();
 

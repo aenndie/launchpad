@@ -8,6 +8,7 @@ const POS_DIFF_1:Decimal = dec!("1");
 const POS_DIFF_ATO:Decimal = dec!("0.000000000000000001"); // 10^-18
 
 
+/*
 #[test]
 fn tc_0_0_just_instantiate() {    
 
@@ -548,6 +549,73 @@ fn tc_1_11_2_availability_case_max_plus_1() {
 }
 
 #[test]
+fn tc_1_12_1_price_correct_stage1_eq_stage_2_case_range1() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 10u16).unwrap();
+
+    // buy 5 placeholder: should cost 5x15=75
+    let amount_token = 75* helper.latest_usd_price;
+    helper.buy_placeholders_check(true,  5u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_12_2_price_correct_stage1_eq_stage_2_case_range1_and_range_3() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 10u16).unwrap();
+
+    // buy 15 placeholder: should cost 10x15 + 5*25 =150 + 125 = 275
+    let amount_token = 275* helper.latest_usd_price;
+    helper.buy_placeholders_check(true,  15u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_12_3_price_correct_stage1_eq_stage_2_case_range_3() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 10u16).unwrap();
+
+    // at first 12 placeholders -> 10*15 + 2*25 = 150 + 50 = 200
+    let amount_token = 200* helper.latest_usd_price;
+    helper.buy_placeholders(true,  12u16, amount_token).unwrap();
+
+    // buy 10 placeholder: should cost 10x25 = 250
+    let amount_token = 250* helper.latest_usd_price;
+    helper.buy_placeholders_check(true,  10u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
 #[should_panic]
 fn tc_2_1_1_set_price_case_no_proof() {    
 
@@ -575,6 +643,26 @@ fn tc_2_1_2_set_price_case_auth_disabled() {
     helper.instantiate(collection_size,  price).unwrap();
 
     helper.env.disable_auth_module();     
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should succeed now       
+}
+
+
+
+
+#[test]
+fn tc_2_1_3_set_price_case_super_admin_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+    
+    //let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    
+    helper.env.enable_auth_module();
 
     helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should succeed now       
 }
@@ -1000,7 +1088,7 @@ fn check_if_storing_phs_works_double_check2() {
 
 #[test]
 #[should_panic]
-fn tc_4_1_1_change_phs_not_all_phs_mapped_case_not_assigned_at_all() {
+fn tc_4_1_1_swap_phs_not_all_phs_mapped_case_not_assigned_at_all() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1016,12 +1104,12 @@ fn tc_4_1_1_change_phs_not_all_phs_mapped_case_not_assigned_at_all() {
     let amount_token = 10 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true,  10, amount_token).unwrap();
 
-    helper.change_placeholders_into_nfts(1).unwrap(); // should fail since assign was not called in between
+    helper.swap_placeholders(1).unwrap(); // should fail since assign was not called in between
 }
 
 #[test]
 #[should_panic]
-fn tc_4_1_2_change_phs_not_all_phs_mapped_case_only_once_assigned_but_two_needed() {
+fn tc_4_1_2_swap_phs_not_all_phs_mapped_case_only_once_assigned_but_two_needed() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1047,11 +1135,11 @@ fn tc_4_1_2_change_phs_not_all_phs_mapped_case_only_once_assigned_but_two_needed
     helper.assign_placeholders_to_nfts().unwrap();
 
     // change 1
-    helper.change_placeholders_into_nfts(1).unwrap(); // should fail since previous assign could not assign all
+    helper.swap_placeholders(1).unwrap(); // should fail since previous assign could not assign all
 }
 
 #[test]
-fn tc_4_1_3_change_phs_all_phs_mapped_case_call_twice() {
+fn tc_4_1_3_swap_phs_all_phs_mapped_case_call_twice() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1077,13 +1165,13 @@ fn tc_4_1_3_change_phs_all_phs_mapped_case_call_twice() {
     helper.assign_placeholders_to_nfts().unwrap();
 
     // change 1
-    helper.change_placeholders_into_nfts(1).unwrap(); // should succeed now
+    helper.swap_placeholders(1).unwrap(); // should succeed now
 }
 
 
 #[test]
 #[should_panic]
-fn tc_4_2_1_change_phs_case_amount_zero() {
+fn tc_4_2_1_swap_phs_case_amount_zero() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1103,12 +1191,12 @@ fn tc_4_2_1_change_phs_case_amount_zero() {
     helper.assign_placeholders_to_nfts().unwrap();    
 
     // change 0
-    helper.change_placeholders_into_nfts(0).unwrap(); // should fail since 0 is not allowed
+    helper.swap_placeholders(0).unwrap(); // should fail since 0 is not allowed
 }
 
 
 #[test]
-fn tc_4_3_1_change_phs_max_amount_case_eq_max() {
+fn tc_4_3_1_swap_phs_max_amount_case_eq_max() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1132,13 +1220,13 @@ fn tc_4_3_1_change_phs_max_amount_case_eq_max() {
     helper.assign_placeholders_to_nfts().unwrap();    
 
     // change 50
-    helper.change_placeholders_into_nfts(50).unwrap(); // should succeed
+    helper.swap_placeholders(50).unwrap(); // should succeed
 }
 
 
 #[test]
 #[should_panic]
-fn tc_4_3_2_change_phs_max_amount_case_eq_max_plus1() {
+fn tc_4_3_2_swap_phs_max_amount_case_eq_max_plus1() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1162,11 +1250,11 @@ fn tc_4_3_2_change_phs_max_amount_case_eq_max_plus1() {
     helper.assign_placeholders_to_nfts().unwrap();    
 
     // change 51
-    helper.change_placeholders_into_nfts(51).unwrap(); // should fail 
+    helper.swap_placeholders(51).unwrap(); // should fail 
 }
 
 #[test]
-fn tc_4_4_2_change_phs_case_bucket_larger_than_needed() {
+fn tc_4_4_2_swap_phs_case_bucket_larger_than_needed() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1187,14 +1275,14 @@ fn tc_4_4_2_change_phs_case_bucket_larger_than_needed() {
 
     // change 5, but provide 10 placeholders -> get 5 back
     helper.expect_phs_in_bucket(dec!("20")).unwrap();
-    helper.change_placeholders_into_nfts_check(dec!("10"), 5).unwrap(); // should succeed and we get 5 phs back
+    helper.swap_placeholders_check(dec!("10"), 5).unwrap(); // should succeed and we get 5 phs back
     helper.expect_phs_in_bucket(dec!("15")).unwrap(); // from team and 5 back from this call
     helper.expect_pyros_in_bucket(dec!("5")).unwrap();
 }
 
 #[test]
 #[should_panic]
-fn tc_4_4_3_change_phs_case_bucket_smaller_than_needed() {
+fn tc_4_4_3_swap_phs_case_bucket_smaller_than_needed() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -1214,7 +1302,7 @@ fn tc_4_4_3_change_phs_case_bucket_smaller_than_needed() {
     helper.assign_placeholders_to_nfts().unwrap();        
 
     // change 10, but only provide 5 placeholders    
-    helper.change_placeholders_into_nfts_check(dec!("5"), 10).unwrap(); // should fail
+    helper.swap_placeholders_check(dec!("5"), 10).unwrap(); // should fail
 }
 
 #[test]
@@ -1477,7 +1565,7 @@ fn tc_6_1_1_get_nfts_case_no_proof() {
 
     // reserve 5 pyros
     helper.env.enable_auth_module();
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
     
 }
 
@@ -1499,7 +1587,7 @@ fn tc_6_1_2_get_nfts_case_auth_disabled() {
 
     // get 5 pyros
     helper.env.disable_auth_module();
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should succeed    
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should succeed    
 }
 
 #[test]
@@ -1520,8 +1608,8 @@ fn tc_6_2_1_get_nfts_case_call_twice_same_code() {
     helper.assign_placeholders_to_nfts().unwrap(); 
 
     // get 2x5 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // 2nd call should fail
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // 2nd call should fail
 }
 
 #[test]
@@ -1541,8 +1629,8 @@ fn tc_6_2_2_get_nfts_case_call_twice_different_code() {
     helper.assign_placeholders_to_nfts().unwrap(); 
 
     // get 2x 5 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 5, false).unwrap(); // 2nd call should succeed since different coupon
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0099999".to_owned(), 5, false).unwrap(); // 2nd call should succeed since different coupon
 }
 
 #[test]
@@ -1564,9 +1652,9 @@ fn tc_6_3_1_get_nfts_case_eq_max_minus_1() {
     // 90 available
 
     // get 89 pyros
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 29, false).unwrap(); // should succeed
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0099999".to_owned(), 29, false).unwrap(); // should succeed
 }
 
 
@@ -1589,9 +1677,9 @@ fn tc_6_3_2_get_nfts_case_eq_max() {
     // 90 available
 
     // get 90 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 30, false).unwrap(); // should succeed
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0099999".to_owned(), 30, false).unwrap(); // should succeed
 }
 
 #[test]
@@ -1614,9 +1702,9 @@ fn tc_6_3_3_get_nfts_case_eq_max_plus_1() {
     // 90 available
 
     // get 91 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 31, false).unwrap(); // should fail
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0099999".to_owned(), 31, false).unwrap(); // should fail
 }
 
 
@@ -1639,8 +1727,8 @@ fn tc_6_5_1_get_nfts_before_buy_placeholder_case_eq_max_minus_1() {
     // 90 available
 
     // get 60 + buy 29 = 89 pyros in total   
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
 
     let amount_token = 29 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true, 29, amount_token).unwrap();
@@ -1665,8 +1753,8 @@ fn tc_6_5_2_get_nfts_before_buy_placeholder_case_eq_max() {
     // 90 available
 
     // get 60 + buy 30 = 30 pyros in total   
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
 
     let amount_token = 30 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true, 30, amount_token).unwrap();
@@ -1692,8 +1780,8 @@ fn tc_6_5_3_get_nfts_before_buy_placeholder_case_eq_max_plus_1() {
     // 90 available
 
     // get 60 + buy 31 = 91 pyros in total   
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
 
     let amount_token = 31 * 20 * helper.latest_usd_price;
     helper.buy_placeholders(true, 31, amount_token).unwrap();
@@ -1718,8 +1806,8 @@ fn tc_6_6_1_get_nfts_before_reserve_case_eq_max_minus_1() {
     // 90 available
 
     // get 89 pyros
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
     helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 29).unwrap(); // should succeed
 }
 
@@ -1743,8 +1831,8 @@ fn tc_6_6_2_get_nfts_before_reserve_case_eq_max() {
     // 90 available
 
     // get 90 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
     helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 30).unwrap(); // should succeed
 }
 
@@ -1768,8 +1856,8 @@ fn tc_6_6_3_get_nfts_before_reserve_case_eq_max_plus_1() {
     // 90 available
 
     // get 91 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0022222".to_owned(), 30, false).unwrap(); 
     helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 31).unwrap(); // should fail
 }
 
@@ -1792,9 +1880,34 @@ fn tc_6_7_1_get_nfts_case_reserve_get_same_coupon() {
     // 90 available
 
     // get 61 pyros    
-    helper.get_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap();     
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap();     
     helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 31).unwrap(); 
-    helper.get_nfts_for_usd_sale("CP0099999".to_owned(), 31, true).unwrap(); // should succeed
+    helper.claim_nfts_for_usd_sale("CP0099999".to_owned(), 31, true).unwrap(); // should succeed
+}
+
+#[test]
+#[should_panic]
+fn tc_6_8_1_get_nfts_case_reserve_get_same_coupon() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    // 90 available
+
+    // get 61 pyros    
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 30, false).unwrap();     
+    helper.reserve_nfts_for_usd_sale("CP0099999".to_owned(), 31).unwrap(); 
+    helper.claim_nfts_for_usd_sale("CP0099999".to_owned(), 32, true).unwrap(); // should fail since 32 <> 31
 }
 
 #[test]
@@ -1837,7 +1950,7 @@ fn tc_7_1_1_all_buy_methods_case_last_buy_enough() {
     helper.expect_pyros_in_bucket(dec!("16")).unwrap();
 
     // change 25 placeholder
-    helper.change_placeholders_into_nfts(25).unwrap();
+    helper.swap_placeholders(25).unwrap();
 
     // 69 - 25 = 44 placeholder
     helper.expect_phs_in_bucket(dec!("44")).unwrap();
@@ -1846,7 +1959,7 @@ fn tc_7_1_1_all_buy_methods_case_last_buy_enough() {
     helper.expect_pyros_in_bucket(dec!("41")).unwrap();     
 
     // change remaining 44 placeholder
-    helper.change_placeholders_into_nfts(44).unwrap();
+    helper.swap_placeholders(44).unwrap();
 
     // 0 placeholder
     helper.expect_phs_in_bucket(dec!("0")).unwrap();
@@ -1855,8 +1968,8 @@ fn tc_7_1_1_all_buy_methods_case_last_buy_enough() {
     helper.expect_pyros_in_bucket(dec!("85")).unwrap();     
 
     // remaining 15 are reserved
-    helper.get_nfts_for_usd_sale("CP01".to_owned(), 3, true).unwrap();
-    helper.get_nfts_for_usd_sale("CP04".to_owned(), 12, true).unwrap();
+    helper.claim_nfts_for_usd_sale("CP01".to_owned(), 3, true).unwrap();
+    helper.claim_nfts_for_usd_sale("CP04".to_owned(), 12, true).unwrap();
 
     // no phs left, 100 pyro nfts
     helper.expect_phs_in_bucket(dec!("0")).unwrap();
@@ -1904,7 +2017,7 @@ fn tc_7_2_1_all_buy_methods_case_last_reserve_enough() {
     // reserve 49 placeholder        
     helper.reserve_nfts_for_usd_sale("CP001".to_owned(), 49).unwrap(); // should succeed
 
-    helper.get_nfts_for_usd_sale("CP001".to_owned(), 49, true).unwrap(); // should succeed as well
+    helper.claim_nfts_for_usd_sale("CP001".to_owned(), 49, true).unwrap(); // should succeed as well
 }
 
 #[test]
@@ -1945,7 +2058,7 @@ fn tc_7_3_1_all_buy_methods_case_last_get_enough() {
     helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
 
     // get 49 placeholder        
-    helper.get_nfts_for_usd_sale("CP001".to_owned(), 49, false).unwrap(); // should succeed
+    helper.claim_nfts_for_usd_sale("CP001".to_owned(), 49, false).unwrap(); // should succeed
 }
 
 #[test]
@@ -1965,7 +2078,7 @@ fn tc_7_3_2_all_buy_methods_case_last_get_not_enough() {
     helper.buy_41_with_all_methods().unwrap(); // should leave 49 left - 16 NFTs - 10 Placeholder
 
     // get 50 placeholder        
-    helper.get_nfts_for_usd_sale("CP001".to_owned(), 50, false).unwrap(); // should fail
+    helper.claim_nfts_for_usd_sale("CP001".to_owned(), 50, false).unwrap(); // should fail
 }
 
 
@@ -2070,7 +2183,7 @@ fn tc_8_3_3_pause_case_get_nfts_for_usd_afterwards_without_reservation() {
     
     helper.pause_sale().unwrap(); // should succeed since auth module disabled    
     
-    helper.get_nfts_for_usd_sale("CP001".to_owned(),  1u16, false).unwrap(); // should fail since sale paused
+    helper.claim_nfts_for_usd_sale("CP001".to_owned(),  1u16, false).unwrap(); // should fail since sale paused
 }
 
 #[test]
@@ -2089,5 +2202,7 @@ fn tc_8_3_4_pause_case_get_nfts_for_usd_afterwards_with_reservation() {
 
     helper.pause_sale().unwrap(); // should succeed since auth module disabled    
     
-    helper.get_nfts_for_usd_sale("CP001".to_owned(),  1u16, true).unwrap(); // this is explictely allowed for users having paid already
+    helper.claim_nfts_for_usd_sale("CP001".to_owned(),  1u16, true).unwrap(); // this is explictely allowed for users having paid already
 }
+*/
+

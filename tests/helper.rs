@@ -21,7 +21,10 @@ pub struct MigrationHelper {
     pub pyro_auth: Option<PyroAuthorization>,    
     pub phs_bucket: Option<Bucket>, 
     pub pyros_bucket: Option<Bucket>, 
-    pub latest_usd_price: Decimal
+    pub latest_usd_price: Decimal, 
+    pub owner_badge_address: Option<ResourceAddress>, 
+    pub super_admin_badge_address: Option<ResourceAddress>, 
+    pub admin_badge_address: Option<ResourceAddress>
 }
 
 
@@ -89,7 +92,10 @@ impl MigrationHelper {
             pyro_auth: None,         
             phs_bucket: None, 
             pyros_bucket: None,            
-            latest_usd_price: Decimal::ZERO
+            latest_usd_price: Decimal::ZERO, 
+            owner_badge_address: None, 
+            super_admin_badge_address: None, 
+            admin_badge_address: None 
         })
 
     
@@ -121,6 +127,8 @@ impl MigrationHelper {
             price                         
         )?;        
 
+
+
         Ok(())
 
     }
@@ -136,6 +144,10 @@ impl MigrationHelper {
                 &mut self.env)?;
 
         self.pyro_auth = Some (pyro_authorization);
+
+        self.owner_badge_address = Some (rm_badge_owner_bucket.resource_address(&mut self.env)?);
+        self.super_admin_badge_address = Some (rm_badge_super_admin_bucket.resource_address(&mut self.env)?);
+        self.admin_badge_address = Some (rm_badge_admin_bucket.resource_address(&mut self.env)?);
 
         Ok((rm_badge_owner_bucket, rm_badge_super_admin_bucket, rm_badge_admin_bucket))
     }
@@ -469,14 +481,14 @@ impl MigrationHelper {
     }
 
 
-    pub fn change_placeholders_into_nfts(&mut self, amount: u16) -> Result<(), RuntimeError>
+    pub fn swap_placeholders(&mut self, amount: u16) -> Result<(), RuntimeError>
     {
-        self.change_placeholders_into_nfts_check(Decimal::from(amount), amount).unwrap();
+        self.swap_placeholders_check(Decimal::from(amount), amount).unwrap();
 
         Ok(())
     }
     
-    pub fn change_placeholders_into_nfts_check(&mut self, amount_bucket: Decimal, amount: u16) -> Result<(), RuntimeError>
+    pub fn swap_placeholders_check(&mut self, amount_bucket: Decimal, amount: u16) -> Result<(), RuntimeError>
     {
         let pyro = self.pyro_sale.unwrap();
 
@@ -486,7 +498,7 @@ impl MigrationHelper {
         let mut pyro = self.pyro_sale.unwrap();  
         let bucket = self.phs_bucket.as_mut().unwrap().take(amount_bucket, &mut self.env)?;
         
-        let (pyros, phs) = pyro.change_placeholders_into_nfts( bucket, amount, &mut self.env).unwrap();
+        let (pyros, phs) = pyro.swap_placeholders( bucket, amount, &mut self.env).unwrap();
 
         // check internal
         let (_, _, _, d2, _, _, _) = pyro.get_internal_state(&mut self.env)?;
@@ -535,13 +547,13 @@ impl MigrationHelper {
     }
 
 
-    pub fn get_nfts_for_usd_sale(&mut self, coupon_code:String, amount: u16, was_reserved_before:bool) -> Result<(), RuntimeError>
+    pub fn claim_nfts_for_usd_sale(&mut self, coupon_code:String, amount: u16, was_reserved_before:bool) -> Result<(), RuntimeError>
     {
         let mut pyro = self.pyro_sale.unwrap();
 
         let (a1, b1, _c1, d1, _e1, f1, g1) = pyro.get_internal_state(&mut self.env)?;
 
-        let pyro_nfts = pyro.get_nfts_for_usd_sale(coupon_code, amount, 50, &mut self.env).unwrap();
+        let pyro_nfts = pyro.claim_nfts_for_usd_sale(coupon_code, amount, 50, &mut self.env).unwrap();
         
         // check return
         assert_eq!(pyro_nfts.amount(&mut self.env)?, Decimal::from(amount));            
@@ -584,10 +596,10 @@ impl MigrationHelper {
         
         // reserve and get 7
         self.reserve_nfts_for_usd_sale("CP02".to_owned(), 7).unwrap();
-        self.get_nfts_for_usd_sale("CP02".to_owned(), 7, true).unwrap();
+        self.claim_nfts_for_usd_sale("CP02".to_owned(), 7, true).unwrap();
 
         // get 9
-        self.get_nfts_for_usd_sale("CP03".to_owned(), 9, false).unwrap();
+        self.claim_nfts_for_usd_sale("CP03".to_owned(), 9, false).unwrap();
 
         // buy 5 ph 
         self.buy_placeholders(true, 5, amount_token).unwrap();
