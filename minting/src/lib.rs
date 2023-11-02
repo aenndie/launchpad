@@ -125,7 +125,8 @@ mod pyrominting {
                         minter_updater => rule!(require(global_caller(component_address)));
                     ))            
                     .burn_roles(burn_roles!(
-                        burner => rule!(require(global_caller(component_address)));
+                        //burner => rule!(require(global_caller(component_address)));
+                        burner => rule!(allow_all); // allow "anybody" to burn them, especially our sale smart contract
                         burner_updater => rule!(deny_all);                        
                     ))                                          
                     .create_with_no_initial_supply();            

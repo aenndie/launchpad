@@ -1,10 +1,22 @@
 //use pretty_assertions::assert_eq;
 use sale::test_bindings::*;
-use minting::test_bindings::*;
+use minting::{test_bindings::*, PyroNFT};
 use authorization::test_bindings::*;
 use dummy_account::test_bindings::*;
-use scrypto::this_package;
+use scrypto::this_package; // resource::ScryptoBucket
 use scrypto_test::prelude::*;
+
+#[derive(ScryptoSbor, PartialEq)]
+pub enum Action {
+    AddNftsForSale,
+    StartSale, 
+    PauseSale, 
+    ContinueSale, 
+    UseManualUsdPrice, 
+    UseRuntimeUsdPrice, 
+    WithdrawXRD,
+    CollectNftsInEmergency
+}
 
 pub struct MigrationHelper {
     pub env: TestEnvironment,
@@ -21,6 +33,8 @@ pub struct MigrationHelper {
     pub pyro_auth: Option<PyroAuthorization>,    
     pub phs_bucket: Option<Bucket>, 
     pub pyros_bucket: Option<Bucket>, 
+    //pub phs_bucket: Bucket, 
+    //pub pyros_bucket: Bucket, 
     pub latest_usd_price: Decimal, 
     pub owner_badge_address: Option<ResourceAddress>, 
     pub super_admin_badge_address: Option<ResourceAddress>, 
@@ -114,7 +128,7 @@ impl MigrationHelper {
         let admin_badge_address = badge_admin_bucket.resource_address(&mut self.env)?;
         
         let (pyro_address, placeholder_address) = self.instantiate_minting( 
-            owner_badge_address,     
+            admin_badge_address,     
             max_collection_size
         )?;                        
 
@@ -212,16 +226,14 @@ impl MigrationHelper {
 
         self.pyro_sale = Some (pyro_sale);  
 
-        pyro_sale.use_manual_usd_price(Decimal::ONE, &mut self.env)?;
+        //self.dummy();        
+        pyro_sale.use_manual_usd_price(Decimal::ONE, &mut self.env)?;                
+        pyro_sale.set_do_check_for_same_transaction(false, &mut self.env)?;
         
-        let b = pyro_sale.get_placeholder_bucket(&mut self.env)?;
-        self.phs_bucket = Some(b);
-
-        self.pyros_bucket = Some ( pyro_sale.get_pyro_bucket(&mut self.env)? );
-
-        self.latest_usd_price = pyro_sale.get_latest_usd_price(&mut self.env)?;
-
-        self.set_do_check_for_same_transaction(false).unwrap();
+        self.phs_bucket         = Some ( self.get_placeholder_bucket() );
+        self.pyros_bucket       = Some ( self.get_pyro_bucket() );
+        
+        self.latest_usd_price   = self.get_latest_usd_price();
 
         Ok(())
     }
@@ -233,7 +245,7 @@ impl MigrationHelper {
 
         let mut pyro = self.pyro_sale.unwrap();
 
-        let (a1, b1, _, _, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+        let (a1, b1, _, _, _, _, _) = self.get_internal_state();
 
         let mut payment = self.xrd_token.take(amount_token, &mut self.env)?;
         
@@ -259,7 +271,7 @@ impl MigrationHelper {
         assert_eq!( phs.amount(&mut self.env)?, Decimal::from(amount_placeholders) );
         
         // check internal state
-        let (a2, b2, _, _, _, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+        let (a2, b2, _, _, _, _, _) = self.get_internal_state();
 
         assert_eq!(a2, a1 - amount_placeholders);
         assert_eq!(b2, b1 + amount_placeholders);
@@ -275,10 +287,8 @@ impl MigrationHelper {
         self.buy_placeholders_check(use_xrd, amount_placeholders, amount_token, false, Decimal::ZERO)
     }
 
-    fn mint_dummy_nft(&mut self, nft_id: u16, put_placeholder_in_sale_contract:bool) -> Result<(), RuntimeError>
+    fn mint_dummy_pyro_nft(&mut self, nft_id:u16) -> Bucket
     {
-        let mut pyro_sale = self.pyro_sale.unwrap();
-        
         let mut pyro_mint = self.pyro_minting.unwrap();
 
         let pyro_name = "Name ".to_owned() + &nft_id.to_string();
@@ -303,11 +313,22 @@ impl MigrationHelper {
         let pyro_id = nft_id;
         
         let pyro_nft = pyro_mint.mint_pyro_nft(nft_id, pyro_id, pyro_name, pyro_desc, pyro_filename, key_image_hash, pyro_traits, &mut self.env).unwrap();
+
+        pyro_nft
+
+    }
+    
+    fn mint_dummy_pyro_and_placeholder_nft(&mut self, nft_id: u16, put_placeholder_in_sale_contract:bool) -> Result<(), RuntimeError>
+    {
+        let mut pyro_sale = self.pyro_sale.unwrap();
+        let mut pyro_mint = self.pyro_minting.unwrap();
+        
+        let pyro_nft = self.mint_dummy_pyro_nft(nft_id);
         
         // self.env.disable_costing_module();
         let placeholder_nft = pyro_mint.mint_placeholder_nft(&mut self.env).unwrap();
 
-        let placeholder_bucket = pyro_sale.get_placeholder_bucket(&mut self.env)?;
+        let placeholder_bucket = self.get_placeholder_bucket();
 
         if put_placeholder_in_sale_contract
         {
@@ -337,7 +358,7 @@ impl MigrationHelper {
             // the FIRST nft_ids from 1 .. amount_team are kept outside the SC
             let put_placeholder_in_sale_contract = nft_id > amount_team;
 
-            self.mint_dummy_nft(nft_id, put_placeholder_in_sale_contract)?;
+            self.mint_dummy_pyro_and_placeholder_nft(nft_id, put_placeholder_in_sale_contract)?;
             nft_id+=1;
         };
 
@@ -349,6 +370,13 @@ impl MigrationHelper {
         let mut pyro = self.pyro_sale.unwrap();
 
         pyro.start_sale(&mut self.env)        
+    }
+
+    pub fn continue_sale(&mut self) -> Result<(), RuntimeError>
+    {
+        let mut pyro = self.pyro_sale.unwrap();
+
+        pyro.continue_sale(&mut self.env)        
     }
 
     pub fn pause_sale(&mut self) -> Result<(), RuntimeError>
@@ -399,6 +427,13 @@ impl MigrationHelper {
 
     pub fn mint_till_start_sale(&mut self, amount_nfts:u16, amount_team:u16) -> Result<(), RuntimeError>
     {
+        self.mint_till_start_sale_or_without(amount_nfts, amount_team, true).unwrap();
+
+        Ok(())
+    }
+    
+    pub fn mint_till_start_sale_or_without(&mut self, amount_nfts:u16, amount_team:u16, start_sale:bool) -> Result<(), RuntimeError>
+    {
         self.mint_dummy_nfts(amount_nfts, amount_team)?;
     
         // self.set_status_minting_finished().unwrap();
@@ -412,8 +447,11 @@ impl MigrationHelper {
         self.get_placeholders_for_team(team_second).unwrap();
         self.get_placeholders_for_team(team_third).unwrap();        
         */
-            
-        self.start_sale().unwrap();
+
+        if start_sale 
+        {
+            self.start_sale().unwrap();
+        }        
 
         Ok(())
     }
@@ -434,11 +472,11 @@ impl MigrationHelper {
     {
         let mut pyro = self.pyro_sale.unwrap();
 
-        let (_, _, c1, _, e1, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+        let (_, _, c1, _, e1, _, _) = self.get_internal_state();
 
         pyro.assign_placeholders_to_nfts( 20u16,&mut self.env).unwrap();
 
-        let (_, _, c2, _, e2, _, _) = pyro.get_internal_state(&mut self.env).unwrap();
+        let (_, _, c2, _, e2, _, _) = self.get_internal_state();
 
         
         // check internal state
@@ -459,7 +497,9 @@ impl MigrationHelper {
     {
         let mut pyro = self.pyro_sale.unwrap();
 
-        pyro.set_do_check_for_same_transaction(do_check, &mut self.env)
+        pyro.set_do_check_for_same_transaction(do_check, &mut self.env).unwrap();
+
+        Ok(())
     }
 
     pub fn expect_phs_in_bucket(&mut self, amount_expected:Decimal) -> Result<(), RuntimeError>
@@ -492,7 +532,7 @@ impl MigrationHelper {
     {
         let pyro = self.pyro_sale.unwrap();
 
-        let (_, _, _, d1, _, _, _) = pyro.get_internal_state(&mut self.env)?;
+        let (_, _, _, d1, _, _, _) = self.get_internal_state();
 
         // get amount_bucket phs from internal helper bucket for changing into pyro nfts
         let mut pyro = self.pyro_sale.unwrap();  
@@ -501,7 +541,7 @@ impl MigrationHelper {
         let (pyros, phs) = pyro.swap_placeholders( bucket, amount, &mut self.env).unwrap();
 
         // check internal
-        let (_, _, _, d2, _, _, _) = pyro.get_internal_state(&mut self.env)?;
+        let (_, _, _, d2, _, _, _) = self.get_internal_state();
         
         assert_eq!(d2, d1 - amount);        
 
@@ -527,13 +567,13 @@ impl MigrationHelper {
     {
         let mut pyro = self.pyro_sale.unwrap();
 
-        let (a1, b1, c1, d1, e1, f1, g1) = pyro.get_internal_state(&mut self.env)?;
+        let (a1, b1, c1, d1, e1, f1, g1) = self.get_internal_state();
 
         pyro.reserve_nfts_for_usd_sale(coupon_code, amount, &mut self.env).unwrap();
 
 
         // check internal state
-        let (a2, b2, c2, d2, e2, f2, g2) = pyro.get_internal_state(&mut self.env)?;
+        let (a2, b2, c2, d2, e2, f2, g2) = self.get_internal_state();
 
         assert_eq!(a1, a2);
         assert_eq!(b1, b2);
@@ -551,7 +591,7 @@ impl MigrationHelper {
     {
         let mut pyro = self.pyro_sale.unwrap();
 
-        let (a1, b1, _c1, d1, _e1, f1, g1) = pyro.get_internal_state(&mut self.env)?;
+        let (a1, b1, _c1, d1, _e1, f1, g1) = self.get_internal_state();
 
         let pyro_nfts = pyro.claim_nfts_for_usd_sale(coupon_code, amount, 50, &mut self.env).unwrap();
         
@@ -559,7 +599,7 @@ impl MigrationHelper {
         assert_eq!(pyro_nfts.amount(&mut self.env)?, Decimal::from(amount));            
 
         // check internal state
-        let (a2, b2, _c2, d2, _e2, f2, g2) = pyro.get_internal_state(&mut self.env)?;
+        let (a2, b2, _c2, d2, _e2, f2, g2) = self.get_internal_state();
 
         assert_eq!(a1 - amount, a2);
         assert_eq!(b1 + amount, b2);
@@ -620,4 +660,367 @@ impl MigrationHelper {
 
     }
 
+    pub fn complex_testcase(&mut self, step:u16) -> Result<(), RuntimeError>
+    {        
+        let mut pyro_mint = self.pyro_minting.unwrap();
+        let mut pyro_sale = self.pyro_sale.unwrap();        
+        
+        if step==1 
+        {
+            let placeholder_nft = pyro_mint.mint_placeholder_nft(&mut self.env).unwrap();                                
+            let empty_pyro_bucket = self.get_pyro_bucket();
+            pyro_sale.add_nfts_for_sale(1, empty_pyro_bucket, placeholder_nft, &mut self.env).unwrap();
+            return Ok(())
+        }
+        else if step==2
+        {
+            let placeholder_nft = pyro_mint.mint_placeholder_nft(&mut self.env).unwrap();                                
+            let pyro_nfts_2 = self.mint_dummy_pyro_nft(1);
+            pyro_nfts_2.put(self.mint_dummy_pyro_nft(2), &mut self.env).unwrap();
+            pyro_sale.add_nfts_for_sale(1, pyro_nfts_2, placeholder_nft, &mut self.env).unwrap();
+            return Ok(())
+        }       
+        else if step==3
+        {
+            let pyro_nft_1 = self.mint_dummy_pyro_nft(2);        
+            let placeholder_nfts_2 = pyro_mint.mint_placeholder_nft(&mut self.env).unwrap();
+            placeholder_nfts_2.put( pyro_mint.mint_placeholder_nft(&mut self.env).unwrap(), &mut self.env ).unwrap();
+            pyro_sale.add_nfts_for_sale(1, pyro_nft_1, placeholder_nfts_2, &mut self.env).unwrap();            
+            return Ok(())
+        }
+        else 
+        {
+            // mint without starting sale
+            self.mint_till_start_sale_or_without(99, 10, false).unwrap();                        
+        }
+
+        if step==4
+        {
+            pyro_sale.pause_sale(&mut self.env).unwrap();
+            return Ok(())
+        }
+        else if step == 5 
+        {
+            pyro_sale.continue_sale(&mut self.env).unwrap();
+            return Ok(())
+        }
+        else if step == 6
+        {
+            self.buy_placeholders(true, 1, self.latest_usd_price).unwrap();
+            return Ok(())
+        }
+        else if step == 7
+        {
+            self.assign_placeholders_to_nfts().unwrap();
+            return Ok(())
+        }
+        else if step == 8
+        {
+            self.swap_placeholders(1).unwrap();
+            return Ok(())
+        }
+        else if step == 9
+        {
+            self.reserve_nfts_for_usd_sale("CP001".to_owned(), 1).unwrap();
+            return Ok(())
+        }
+        else if step == 10
+        {
+            self.claim_nfts_for_usd_sale("CP001".to_owned(), 1, false).unwrap();
+            return Ok(())
+        }
+        else
+        {
+            // start sale
+            self.start_sale().unwrap();            
+        }
+
+        if step == 11
+        {
+            self.start_sale().unwrap();
+            return Ok(())
+        }        
+        else if step == 12
+        {
+            let pyro_nft = self.mint_dummy_pyro_nft(100);        
+            let placeholder_nft = self.get_placeholder_bucket();
+
+            pyro_sale.add_nfts_for_sale(100, pyro_nft, placeholder_nft, &mut self.env).unwrap();
+            return Ok(())
+        }
+        else 
+        {
+            // pause sale
+            self.pause_sale().unwrap();            
+        }
+
+        if step==13
+        {
+            pyro_sale.pause_sale(&mut self.env).unwrap(); // should fail since already paused
+            return Ok(())
+        }
+        else if step == 14
+        {
+            pyro_sale.continue_sale(&mut self.env).unwrap(); // should succeed
+            return Ok(())
+        }
+        else if step == 15
+        {
+            self.buy_placeholders(true, 1, self.latest_usd_price).unwrap(); // should fail since sale paused
+            return Ok(())
+        }
+        else if step == 16
+        {
+            self.assign_placeholders_to_nfts().unwrap(); // should succeed
+            return Ok(())
+        }
+        else if step == 17
+        {
+            self.assign_placeholders_to_nfts().unwrap();
+            self.swap_placeholders(1).unwrap(); // should succeed
+            return Ok(())
+        }
+        else if step == 18
+        {
+            self.reserve_nfts_for_usd_sale("CP001".to_owned(), 1).unwrap(); // should fail since sale paused
+            return Ok(())
+        }
+        else if step == 19
+        {
+            self.claim_nfts_for_usd_sale("CP001".to_owned(), 1, false).unwrap(); // should fail since sale paused
+            return Ok(())
+        }
+        else 
+        {
+            // continue sale
+            self.continue_sale().unwrap();            
+        }
+
+        if step==20
+        {
+            self.continue_sale().unwrap();
+            return Ok(())
+        }
+        else if step==21
+        {
+            // should all succeed
+            self.buy_placeholders(true, 1, self.latest_usd_price).unwrap(); // should fail since sale paused                        
+            self.assign_placeholders_to_nfts().unwrap();            
+            self.swap_placeholders(1).unwrap(); 
+            self.reserve_nfts_for_usd_sale("CP001".to_owned(), 1).unwrap(); // should fail since sale paused            
+            self.claim_nfts_for_usd_sale("CP001".to_owned(), 1, true).unwrap(); // should fail since sale paused
+            self.claim_nfts_for_usd_sale("CP002".to_owned(), 1, false).unwrap(); // should fail since sale paused            
+            
+            self.buy_placeholders(true, 2, 2*self.latest_usd_price).unwrap(); // should fail since sale paused                        
+            
+            // get xrd: should be 3 = 2+1 times latest_usd_price
+            let xrd_bucket = pyro_sale.withdraw_xrd(&mut self.env).unwrap();    
+            assert_eq!(xrd_bucket.amount(&mut self.env).unwrap(), 3*self.latest_usd_price);
+            self.xrd_token.put(xrd_bucket, &mut self.env).unwrap();
+
+            // collect remaining nfts in emergency situation: should be 99 - 3 = 96 left
+            self.pause_sale().unwrap();
+            let pyro_nfts = pyro_sale.collect_nfts_in_emergency_situation(dec!("96.0"), &mut self.env).unwrap();
+            assert_eq!(pyro_nfts.amount(&mut self.env).unwrap(), dec!("96.0"));
+            self.pyros_bucket.as_mut().unwrap().put(pyro_nfts, &mut self.env).unwrap();
+
+            return Ok(())
+        }
+        else
+        {
+            let usd_price = dec!("15.0");
+            pyro_sale.use_manual_usd_price( usd_price, &mut self.env).unwrap();
+
+            // set price of an NFT in USD to 20 USD
+            let price_in_usd = dec!("20.0");
+            pyro_sale.set_price(price_in_usd, price_in_usd, price_in_usd, 0, 0, &mut self.env).unwrap();
+        
+            self.buy_placeholders_check(true, 1, usd_price*price_in_usd, true, dec!("0.0")).unwrap();            
+        }
+
+        if step==22
+        {
+            return Ok(())
+        }
+        else if step==23
+        {
+            let prev_usd_price = self.get_latest_usd_price();
+
+            self.env.enable_costing_module();
+            pyro_sale.use_runtime_usd_price( &mut self.env).unwrap();
+
+            let current_usd_price = self.get_latest_usd_price();
+
+            assert_ne!(prev_usd_price, current_usd_price, "Price should have changed by using runtime_price");
+
+            self.buy_placeholders_check(true, 1, current_usd_price*dec!("20.0"), true, dec!("0.0")).unwrap();            
+
+            self.env.disable_costing_module();
+        }
+        
+        Ok(())
+
+    }
+
+    pub fn auth_testcase(&mut self, proof_address:ResourceAddress, action:Action) -> Result<(), RuntimeError>
+    {        
+        let mut pyro_mint = self.pyro_minting.unwrap();
+        let mut pyro_sale = self.pyro_sale.unwrap();
+
+        pyro_sale.use_manual_usd_price(dec!("1"), &mut self.env).unwrap();
+
+        
+        // prepare state depending on action
+        if action==Action::AddNftsForSale || action==Action::StartSale
+        {
+            self.mint_till_start_sale_or_without(99, 10, false).unwrap();                        
+        }
+        else 
+        {
+            self.mint_till_start_sale(100, 10).unwrap(); 
+
+            self.buy_placeholders(true, 1, dec!("1.0")).unwrap();                       
+        }
+
+        if action==Action::ContinueSale || action==Action::CollectNftsInEmergency
+        {
+            self.pause_sale().unwrap();
+        }
+        
+        // create proof and push it on auth zone
+        let proof = ProofFactory::create_fungible_proof(proof_address, Decimal::ONE, CreationStrategy::Mock, &mut self.env).unwrap();        
+        LocalAuthZone::push(proof, &mut self.env).unwrap();        
+        
+        // enable auth module
+        self.env.enable_auth_module();
+
+        // do according action
+        match action {
+            Action::AddNftsForSale => 
+            {
+                self.env.disable_auth_module(); // we don't want to check minting
+                let placeholder_nft = pyro_mint.mint_placeholder_nft(&mut self.env).unwrap();                                                
+                let pyro_nft = self.mint_dummy_pyro_nft(100);
+                self.env.enable_auth_module(); // we don't want to check minting
+
+                pyro_sale.add_nfts_for_sale(100, pyro_nft, placeholder_nft, &mut self.env).unwrap();        
+            }, 
+            Action::CollectNftsInEmergency =>
+            {
+                let pyro_nfts = pyro_sale.collect_nfts_in_emergency_situation(dec!("1.0"), &mut self.env).unwrap();
+                self.pyros_bucket.as_mut().unwrap().put( pyro_nfts, &mut self.env).unwrap();
+            }, 
+            Action::ContinueSale =>
+            {
+                self.continue_sale().unwrap();
+                
+            },  
+            Action::PauseSale =>
+            {
+                self.pause_sale().unwrap();
+                
+            }, 
+            Action::StartSale =>
+            {
+                self.start_sale().unwrap();   
+            }, 
+            Action::UseManualUsdPrice =>
+            {                
+                pyro_sale.use_manual_usd_price(dec!("1.0"), &mut self.env).unwrap();                                
+            }, 
+            Action::UseRuntimeUsdPrice =>
+            {
+                self.env.enable_costing_module();
+                pyro_sale.use_runtime_usd_price(&mut self.env).unwrap();
+                self.env.disable_costing_module();
+            }, 
+            Action::WithdrawXRD =>
+            {
+                let xrd = pyro_sale.withdraw_xrd(&mut self.env).unwrap();
+                self.xrd_token.put( xrd, &mut self.env).unwrap();
+            }, 
+        } 
+
+        self.env.disable_auth_module();                        
+
+        Ok(())
+    }
+
+    fn get_placeholder_bucket(&mut self) -> Bucket
+    {
+        let pyro_sale = self.pyro_sale.unwrap();
+        let state = self.env
+        .read_component_state::<PyroSaleState, _>(pyro_sale)
+        .unwrap();    
+
+        let empty_it = std::iter::empty::<(NonFungibleLocalId,PyroNFT)>();
+
+        BucketFactory::create_non_fungible_bucket(
+            state.placeholder_nfts_address, 
+            empty_it, 
+            Mock, 
+            &mut self.env).unwrap()        
+    }
+
+    fn dummy(&mut self) -> Result<(), RuntimeError>
+    {
+        let pyro_sale = self.pyro_sale.unwrap();
+        let _state = self.env
+            .read_component_state::<PyroSaleState, _>(pyro_sale)
+            .unwrap();        
+
+        Ok(()) 
+    }
+
+    fn get_pyro_bucket(&mut self) -> Bucket
+    {
+        let pyro_sale = self.pyro_sale.unwrap();
+        let state = self.env
+        .read_component_state::<PyroSaleState, _>(pyro_sale)
+        .unwrap();
+
+        let empty_it = std::iter::empty::<(NonFungibleLocalId,PyroNFT)>();
+
+        BucketFactory::create_non_fungible_bucket(
+            state.pyro_nfts_address, 
+            empty_it, 
+            Mock, 
+            &mut self.env).unwrap()
+    }
+
+    fn get_latest_usd_price(&mut self) -> Decimal
+    {
+        let pyro_sale = self.pyro_sale.unwrap();
+        let state = self.env
+        .read_component_state::<PyroSaleState, _>(pyro_sale)
+        .unwrap();
+
+        state.latest_usd_price
+    }
+
+    fn get_internal_state(&mut self) -> (Decimal, u16, u16, Decimal, u16, u16, Decimal)
+    {
+        let pyro_sale = self.pyro_sale.unwrap();
+        let state = self.env
+        .read_component_state::<PyroSaleState, _>(pyro_sale)
+        .unwrap();
+
+        let a = state.placeholder_nfts_vault.amount(&mut self.env).unwrap();
+
+        let b = state.placeholders_sold_or_used_up_total;
+
+        let c = state.mapping_placeholder_nft.len() as u16;
+
+        let d = state.pyro_nfts_vault.amount(&mut self.env).unwrap();
+
+        let e = state.nft_ids.len() as u16;
+
+        let f = state.sold_usd_just_reserved;            
+
+        let g = state.collected_xrd_vault.amount(&mut self.env).unwrap();
+
+        (a, b, c, d, e, f, g)
+    }
+    
+    
 }

@@ -1,0 +1,16 @@
+Test Runtime USD package: package_rdx1phrmfvc4dr44s0ytt425j0vntxtwahda4zxfxy2adkf2gn8l66d6g9
+
+CALL_FUNCTION
+    Address("package_rdx1phrmfvc4dr44s0ytt425j0vntxtwahda4zxfxy2adkf2gn8l66d6g9")
+	"TestRuntimeUsd"
+    "instantiate_pyro";	
+CALL_METHOD
+	Address("account_rdx1293l8ljex0lnpp5hzh0xg98vcn4arqsy6g62qt86traan03yhl60hj")
+	"deposit_batch"
+	Expression("ENTIRE_WORKTOP");		
+
+
+https://dashboard.radixdlt.com/transaction/txid_rdx1wdmk7795fs3e62r9y2k62et6lzaappsawrgy7zzjdunhmtrrlykqq035x7/summary
+
+Component: component_rdx1czscv6s9k9awg2dflr2kefful2zld4m88gjmcr6yfq32kf2eqr4kkd
+

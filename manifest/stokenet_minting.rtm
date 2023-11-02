@@ -1,0 +1,77 @@
+CALL_METHOD
+    Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
+    "create_proof_of_amount"
+    Address("resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr")
+    Decimal("1");
+CALL_METHOD
+    Address("component_tdx_2_1cp8jhm9x573sk3yuxp770chgetd2gvj9l4l47c3p6vsawjnj8pnlqy")
+    "mint_pyro_nft"
+    3u16
+    3u16
+    "TODO"
+    "TODO"
+    "https://pyro-public.s3.eu-central-1.amazonaws.com/collections/1/Pyro_1.jpg"
+    "TODO Image Hash."
+    Array<Tuple>(
+        Tuple(
+            "Bracers",
+            "No Brace"
+        ),
+        Tuple(
+            "EarRing",
+            "No Ear Ring"
+        ),
+        Tuple(
+            "Glasses",
+            "Sporty White"
+        ),
+        Tuple(
+            "Headstyle",
+            "Fire Hair"
+        ),
+        Tuple(
+            "Necklace",
+            "Logo Siver"
+        ),
+        Tuple(
+            "Nose",
+            "No Nose Ring"
+        ),
+        Tuple(
+            "Pants",
+            "Latex Silver Black"
+        ),
+        Tuple(
+            "Ring",
+            "No Ring"
+        ),
+        Tuple(
+            "Shirts",
+            "T Shirt Sausage Red"
+        ),
+        Tuple(
+            "Tattoos",
+            "No Tattoo"
+        ),
+        Tuple(
+            "Wall",
+            "Yellow"
+        )
+    );
+TAKE_FROM_WORKTOP
+    Address("resource_tdx_2_1ntmckf8h6st9k7ms9ktf7pfytje450w4wk0aswcx7wj3mxrxutnye0")
+    Decimal("1")
+    Bucket("pyro_bucket");
+CALL_METHOD
+    Address("component_tdx_2_1cp8jhm9x573sk3yuxp770chgetd2gvj9l4l47c3p6vsawjnj8pnlqy")
+    "mint_placeholder_nft";
+TAKE_FROM_WORKTOP
+    Address("resource_tdx_2_1ntty4dmdrlv6cx4hjehl4vf4afzwwh4wnq5nxtkty3p8m7wek20ksq")
+    Decimal("1")
+    Bucket("placeholder_bucket");    
+CALL_METHOD
+	Address("component_tdx_2_1czqc6n6r5fvszmzxj476z7ctpwz8980nj4lm8arhse40jasrrectdn")
+	"add_nfts_for_sale"
+    3u16
+    Bucket("pyro_bucket")
+    Bucket("placeholder_bucket");

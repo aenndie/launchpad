@@ -55,14 +55,10 @@ mod pyrosale {
             withdraw_xrd => restrict_to: [OWNER];             
 
             // just for the case the SC is broken so we can still get the minted NFTs out and sell them otherwise
-            collect_nfts_in_emergency_situation => restrict_to: [OWNER];                                                                             
+            collect_nfts_in_emergency_situation => restrict_to: [OWNER];
 
-            // test helpers
-            get_placeholder_bucket => PUBLIC;
-            get_pyro_bucket => PUBLIC;
-            get_latest_usd_price => PUBLIC;
-            get_internal_state => PUBLIC;
-            set_do_check_for_same_transaction => PUBLIC;                       
+            // test helper            
+            set_do_check_for_same_transaction => restrict_to: [super_admin, OWNER];                                       
         }
     }
 
@@ -79,16 +75,15 @@ mod pyrosale {
             // status            
             status_sale: StatusSale,             
 
-            // Price stages
+            // NFT Price stages
             price_nft_usd_stage1: Decimal,              
             price_nft_usd_stage2: Decimal,              
             price_nft_usd_stage3: Decimal, 
             amount_stage1: u16, 
             amount_stage2: u16,         
 
-            price_strategy: PriceStrategy,
-            // use_manual_usd_price: bool,
-            // manual_usd_price: Decimal,                 
+            //USD price strategy
+            price_strategy: PriceStrategy,            
 
             // vaults
             pyro_nfts_vault : Vault,       
@@ -143,7 +138,7 @@ mod pyrosale {
             let usd_price = Runtime::get_usd_price();                 
         
             // Instantiate a Pyro component
-            let x = Self {
+            Self {
                 max_amount_nfts_per_buy_or_change,                                 
 
                 pyro_nfts_address, 
@@ -202,10 +197,7 @@ mod pyrosale {
                   }
                 )
               )
-            .globalize();
-
-            x
-
+            .globalize()
         }        
 
         pub fn start_sale(&mut self) {
@@ -217,7 +209,7 @@ mod pyrosale {
 
         pub fn pause_sale(&mut self) {
                         
-            assert!(self.status_sale == StatusSale::SaleOngoing, "Sale is not started.");
+            assert!(self.status_sale == StatusSale::SaleOngoing, "Sale is not ongoing (i.e. not started yet or already paused).");
 
             self.status_sale = StatusSale::SalePaused;
         }   
@@ -312,6 +304,8 @@ mod pyrosale {
         // Mint a new Pyro NFT and keep it in blueprint for sale            
         pub fn add_nfts_for_sale(&mut self, nft_id:u16, pyro_nft:Bucket, placeholder_nft:Bucket)  { 
 
+            assert!(self.status_sale == StatusSale::SaleNotStarted, "Sale is already started.");
+            
             assert!(pyro_nft.amount()==Decimal::ONE, "pyro_nft bucket must contain exactly one pyro nft, but it contains {}.", pyro_nft.amount());              
 
             assert!(placeholder_nft.amount()<=Decimal::ONE, "placeholder_nft bucket must contain one or zero placeholder nft, but it contains {}.", placeholder_nft.amount());              
@@ -389,15 +383,13 @@ mod pyrosale {
                 let one_nft = self.pyro_nfts_vault.as_non_fungible().take_non_fungible(&NonFungibleLocalId::Integer(nft_non_fung_id));                
                 bucket.put(one_nft);                
 
-                // burn placeholder
-                // self.rm_pyro_ph.burn(ph);
-                ph.burn(); // CHECK                                                            
+                // burn placeholder                
+                ph.burn();
 
                 i+=1;
             };
 
             (bucket, placeholders)
-
         }
 
         fn get_one_placeholder(&mut self) -> Bucket {                        
@@ -428,7 +420,6 @@ mod pyrosale {
             bucket 
         }  
 
-
         fn get_total_price(&mut self, mut amount:u16) -> Decimal {
 
             let mut amount_sold = self.placeholders_sold_or_used_up_total + self.sold_usd_just_reserved; // don't count team pyros, giveaways are not contained in placeholders_sold_or_used_up_total            
@@ -437,7 +428,7 @@ mod pyrosale {
             let mut use_stage2 = 0u16;
             let mut use_stage3 = 0u16;
 
-            let amount_start = amount;
+            let amount_initial = amount;
 
             // calc usage of stage 1 price
             if amount_sold < self.amount_stage1
@@ -468,7 +459,7 @@ mod pyrosale {
 
             assert!(amount == 0, "Price cannot be calculated. amount should be zero here, but is {}.", amount);
 
-            assert!(amount_start == use_stage1 + use_stage2 + use_stage3);
+            assert!(amount_initial == use_stage1 + use_stage2 + use_stage3);
 
             // total price in usd
             let total_price_usd =   use_stage1 * self.price_nft_usd_stage1 + 
@@ -555,33 +546,7 @@ mod pyrosale {
 
             // Return the NFT and placeholders
             (nfts, placeholders) 
-        }                    
-
-        // get nfts for team       
-        /*
-        pub fn get_placeholders_for_team(&mut self, amount:u16) -> Bucket
-        {                                       
-            assert!(self.status_minting_finished, "Minting is not finished yet.");
-
-            assert!(self.placeholders_for_team_sent + amount <= self.amount_nfts_for_team, 
-                "There are only {} NFTs for team, but you want to get {} in total", self.amount_nfts_for_team, self.placeholders_for_team_sent + amount);                                    
-
-            assert!(amount > 0, "Amount should be greater than zero, but is {}.", amount);
-
-            let phs = self.get_placeholders(amount, ReasonPlaceholder::TeamMember);
-
-            self.placeholders_for_team_sent += amount;
-
-            self.cap_left_sale -= amount; 
-
-            self.set_last_random_based_on_trans_hash(); // make sure you cannot assign placeholders in same transaction
-            
-            self.check_assertions();
-            self.set_placeholders_unassigned();
-
-            phs
-        }
-        */
+        }                            
 
         pub fn reserve_nfts_for_usd_sale(&mut self, coupon_code:String, amount: u16)
         {                           
@@ -767,50 +732,12 @@ mod pyrosale {
             self.price_strategy = PriceStrategy::Runtime;            
 
             self.latest_usd_price = Runtime::get_usd_price();
-
         }
 
         fn set_placeholders_unassigned(&mut self)
         {
             self.placeholders_unassigned = self.placeholders_sold_or_used_up_total + self.placeholders_kept_outside - self.placeholders_mapped;
-        }
-
-        // the following functions are testing helpers and only needed for testing
-
-        pub fn get_placeholder_bucket(&self) -> Bucket
-        {
-            Bucket::new(self.placeholder_nfts_address)
-        }
-
-        pub fn get_pyro_bucket(&self) -> Bucket
-        {
-            Bucket::new(self.pyro_nfts_address)
-        }
-
-        pub fn get_latest_usd_price(&self) -> Decimal 
-        {
-            self.latest_usd_price
-        }
-
-        pub fn get_internal_state(&self) -> (Decimal, u16, u16, Decimal, u16, u16, Decimal)
-        {
-            let a = self.placeholder_nfts_vault.amount();
-
-            let b = self.placeholders_sold_or_used_up_total;
-
-            let c = self.mapping_placeholder_nft.len() as u16;
-
-            let d = self.pyro_nfts_vault.amount();
-
-            let e = self.nft_ids.len() as u16;
-
-            let f = self.sold_usd_just_reserved;            
-
-            let g = self.collected_xrd_vault.amount();
-
-            (a, b, c, d, e, f, g)
-
-        }
+        }       
 
         pub fn set_do_check_for_same_transaction(&mut self, do_check:bool)
         {

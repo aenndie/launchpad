@@ -1,3 +1,84 @@
+Authorization package: package_tdx_2_1p5stkzan2zt4gjhqmytu90uq0tp9fcz6lt243mfr7zc8mp6rvymh24
+
+CALL_FUNCTION
+    Address("package_tdx_2_1p5stkzan2zt4gjhqmytu90uq0tp9fcz6lt243mfr7zc8mp6rvymh24")
+	"PyroAuthorization"
+    "instantiate"
+	"Pyros World - Stokenet Test collection 30.10.23"
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj");
+CALL_METHOD
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
+	"deposit_batch"
+	Expression("ENTIRE_WORKTOP");		
+
+Component: component_tdx_2_1cr5s27qq5qc5aujyc5zsfh4547hcuwhe3vc60segm4pmp5xcfnt33e
+
+Owner Badge: resource_tdx_2_1th5pgxcg96emd55vz3ek9selpx0v35r9zp20rt8x0p8gtpvr7a8dkn
+Super Admin Badge: resource_tdx_2_1t4gx2d3nu7yu2gqeghdzylaj33u7378y4n26e687rqeq7ujfe97zhq
+Admin Badge: resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr
+
+******************************************************************************************
+Minting package: package_tdx_2_1p5ag4ky74gsu4v2vjt096c52h3ljmxkr33x03jtgxv5gk9vgy4h674
+
+CALL_FUNCTION
+    Address("package_tdx_2_1p5ag4ky74gsu4v2vjt096c52h3ljmxkr33x03jtgxv5gk9vgy4h674")
+	"PyroMinting"
+    "instantiate"
+	Address("resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr")
+	"Pyros World - Stokenet Test collection 30.10.23"
+	"Pyros World - Stokenet 30.10.23"
+	"Fully 3D and metaverse-ready NFTs with genuine utility."
+	"https://www.pyrosworld.com"
+	"https://test.pyros-world.com/img/favicon.png"
+	"Pyros World - Placeholders 30.10.23"
+	"These are anonymous placeholder NFTs needed for a real random sale. Please exchange them into real individual Pyro NFTs on our website."
+	"https://www.pyrosworld.com"
+	"https://test.pyros-world.com/img/favicon.png"
+	"This NFT is a placeholder/coupon for a real NFT. Please exchange it."
+	Array<String>( 		
+		"https://test.pyros-world.com/img/Blanko_1.jpg", 
+		"https://test.pyros-world.com/img/Blanko_2.jpg", 
+		"https://test.pyros-world.com/img/Blanko_3.jpg", 
+		"https://test.pyros-world.com/img/Blanko_4.jpg", 
+		"https://test.pyros-world.com/img/Blanko_5.jpg", 
+		"https://test.pyros-world.com/img/Blanko_6.jpg", 
+		"https://test.pyros-world.com/img/Blanko_7.jpg", 
+		"https://test.pyros-world.com/img/Blanko_8.jpg" 
+	)
+	1000u16
+	11u16;
+CALL_METHOD
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
+	"deposit_batch"
+	Expression("ENTIRE_WORKTOP");		
+
+Component: component_tdx_2_1cqr95p9tna5he8tsnfxqg3jxl3dxjdruuxdga2cdm82g4cmlvfyh72
+Pyro NFTs: resource_tdx_2_1nt2vq0p2kunrjkzp74y36g6zrj88jvh5crk2kmaf8q4rjsr9yvkh8d
+Placeholder NFTs: resource_tdx_2_1n22vq990h6fxg9cvmsmljf5gdkz9hdfcwv8knntn833pf9fdy78zdg
+
+******************************************************************************************
+Sale package: package_tdx_2_1phn97qzymjdpaqj5ry54pfekh0t9qclz08a7ejz6qrurea9qex2y9g
+
+CALL_FUNCTION
+    Address("package_tdx_2_1phn97qzymjdpaqj5ry54pfekh0t9qclz08a7ejz6qrurea9qex2y9g")
+	"PyroSale"
+    "instantiate_pyro"
+	Address("resource_tdx_2_1th5pgxcg96emd55vz3ek9selpx0v35r9zp20rt8x0p8gtpvr7a8dkn")
+	Address("resource_tdx_2_1t4gx2d3nu7yu2gqeghdzylaj33u7378y4n26e687rqeq7ujfe97zhq")
+	Address("resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr")
+	Address("resource_tdx_2_1nt2vq0p2kunrjkzp74y36g6zrj88jvh5crk2kmaf8q4rjsr9yvkh8d")
+	Address("resource_tdx_2_1n22vq990h6fxg9cvmsmljf5gdkz9hdfcwv8knntn833pf9fdy78zdg")
+	Decimal("20.0")
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
+	50u16;
+CALL_METHOD
+	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
+	"deposit_batch"
+	Expression("ENTIRE_WORKTOP");			
+
+Component: component_tdx_2_1cr7a2p5q6uhvqhkwkrh769v7ggaq4mcs7usn2kqjmwsk3n84ce6lqs
+
+******************************************************************************************
 package_tdx_2_1p4ht8egtqy7447ytmashghs7es6326ryfg2kuknvah92ukz0ey967x
 
 CALL_FUNCTION

@@ -2,13 +2,9 @@ mod helper;
 use scrypto_test::prelude::*;
 use helper::*;
 
-
 const POS_DIFF_1:Decimal = dec!("1");
-
 const POS_DIFF_ATO:Decimal = dec!("0.000000000000000001"); // 10^-18
 
-
-/*
 #[test]
 fn tc_0_0_just_instantiate() {    
 
@@ -20,6 +16,7 @@ fn tc_0_0_just_instantiate() {
     helper.instantiate(collection_size,  price).unwrap();   // should succeed 
 }
 
+/*
 
 #[test]
 #[should_panic]
@@ -57,7 +54,6 @@ fn tc_1_1_2_sale_must_be_started_case_is_started() {
     let amount_token = price * helper.latest_usd_price;                
     helper.buy_placeholders(true,  1u16, amount_token).unwrap(); // should succeed now
 }
-
 
 #[test]
 #[should_panic]
@@ -648,10 +644,9 @@ fn tc_2_1_2_set_price_case_auth_disabled() {
 }
 
 
-
-
 #[test]
-fn tc_2_1_3_set_price_case_super_admin_proof() {    
+#[should_panic]
+fn tc_2_1_3_set_price_case_admin_proof() {    
 
     let mut helper = MigrationHelper::new().unwrap();   
 
@@ -660,7 +655,71 @@ fn tc_2_1_3_set_price_case_super_admin_proof() {
         
     helper.instantiate(collection_size,  price).unwrap();
     
-    //let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    let _proof = ProofFactory::create_fungible_proof(helper.admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    helper.env.enable_auth_module();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should succeed now           
+}
+
+#[test]
+fn tc_2_1_4_set_price_case_super_admin_proof() -> Result<(), RuntimeError> {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env)?;
+    
+    helper.env.enable_auth_module();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should succeed now       
+
+    Ok(())
+}
+
+#[test]
+fn tc_2_1_5_set_price_case_owner_proof() -> Result<(), RuntimeError> {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.owner_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env)?;
+    
+    helper.env.enable_auth_module();
+
+    helper.set_price(dec!("15"), dec!("20"), dec!("25"), 10, 20 ).unwrap(); // should succeed now       
+
+    Ok(())
+}
+
+#[test]
+#[should_panic]
+fn tc_2_1_6_set_price_case_wrong_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.non_xrd_address, Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
     
     helper.env.enable_auth_module();
 
@@ -876,6 +935,118 @@ fn tc_3_1_2_assign_placeholder_case_auth_mod_disabled() {
     helper.assign_placeholders_to_nfts().unwrap();    // should succeed
 }
 
+#[test]
+fn tc_3_1_3_assign_placeholder_case_admin_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+
+    let _proof = ProofFactory::create_fungible_proof(helper.admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    // assign phs
+    helper.env.enable_auth_module();
+    
+    helper.assign_placeholders_to_nfts().unwrap(); // should fail
+    
+    helper.env.disable_auth_module();
+}
+
+#[test]
+fn tc_3_1_4_assign_placeholder_case_super_admin_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+
+    let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    // assign phs
+    helper.env.enable_auth_module();
+    
+    helper.assign_placeholders_to_nfts().unwrap(); // should fail
+    
+    helper.env.disable_auth_module();
+}
+
+#[test]
+fn tc_3_1_5_assign_placeholder_case_owner_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+
+    let _proof = ProofFactory::create_fungible_proof(helper.owner_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    // assign phs
+    helper.env.enable_auth_module();
+    
+    helper.assign_placeholders_to_nfts().unwrap(); // should fail
+    
+    helper.env.disable_auth_module();
+}
+
+#[test]
+ #[should_panic]
+fn tc_3_1_6_assign_placeholder_case_wrong_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+    
+    // buy 5 phs
+    let amount_token = 5 * 20 * helper.latest_usd_price;
+    helper.buy_placeholders(true,  5, amount_token).unwrap();
+
+    let _proof = ProofFactory::create_fungible_proof(helper.non_xrd_address, Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    // assign phs
+    helper.env.enable_auth_module();
+    
+    helper.assign_placeholders_to_nfts().unwrap(); // should fail
+    
+    helper.env.disable_auth_module();
+}
 
 #[test]
 #[should_panic]
@@ -1305,6 +1476,7 @@ fn tc_4_4_3_swap_phs_case_bucket_smaller_than_needed() {
     helper.swap_placeholders_check(dec!("5"), 10).unwrap(); // should fail
 }
 
+
 #[test]
 #[should_panic]
 fn tc_5_1_1_reserve_nfts_case_no_proof() {
@@ -1347,6 +1519,107 @@ fn tc_5_1_2_reserve_nfts_case_auth_disabled() {
     // reserve 5 pyros
     helper.env.disable_auth_module();
     helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should succeed    
+}
+
+#[test]
+fn tc_5_1_3_reserve_nfts_case_admin_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should fail
+    
+}
+
+#[test]
+fn tc_5_1_4_reserve_nfts_case_super_admin_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should fail
+    
+}
+
+#[test]
+fn tc_5_1_5_reserve_nfts_case_owner_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.owner_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should fail
+    
+}
+
+#[test]
+#[should_panic]
+fn tc_5_1_6_reserve_nfts_case_wrong_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.non_xrd_address, Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.reserve_nfts_for_usd_sale("CP0012345".to_owned(), 5).unwrap(); // should fail
+    
 }
 
 #[test]
@@ -1588,6 +1861,107 @@ fn tc_6_1_2_get_nfts_case_auth_disabled() {
     // get 5 pyros
     helper.env.disable_auth_module();
     helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should succeed    
+}
+
+#[test]
+fn tc_6_1_3_get_nfts_case_admin_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
+    
+}
+
+#[test]
+fn tc_6_1_4_get_nfts_case_super_admin_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
+    
+}
+
+#[test]
+fn tc_6_1_5_get_nfts_case_owner_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.owner_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
+    
+}
+
+#[test]
+#[should_panic]
+fn tc_6_1_6_get_nfts_case_wrong_proof() {
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();            
+        
+    helper.mint_till_start_sale(100, team_amount).unwrap();    
+
+    // assign
+    helper.assign_placeholders_to_nfts().unwrap(); 
+
+    let _proof = ProofFactory::create_fungible_proof(helper.non_xrd_address, Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+
+    // reserve 5 pyros
+    helper.env.enable_auth_module();
+    helper.claim_nfts_for_usd_sale("CP0012345".to_owned(), 5, false).unwrap(); // should fail
+    
 }
 
 #[test]
@@ -1887,7 +2261,7 @@ fn tc_6_7_1_get_nfts_case_reserve_get_same_coupon() {
 
 #[test]
 #[should_panic]
-fn tc_6_8_1_get_nfts_case_reserve_get_same_coupon() {
+fn tc_6_8_1_get_nfts_case_reserve_get_same_coupon_wrong_amount() {
 
     let mut helper = MigrationHelper::new().unwrap();        
         
@@ -2081,7 +2455,6 @@ fn tc_7_3_2_all_buy_methods_case_last_get_not_enough() {
     helper.claim_nfts_for_usd_sale("CP001".to_owned(), 50, false).unwrap(); // should fail
 }
 
-
 #[test]
 #[should_panic]
 fn tc_8_1_1_pause_case_no_proof() {    
@@ -2113,6 +2486,96 @@ fn tc_8_1_2_pause_auth_disabled() {
     helper.mint_till_start_sale(100, 10).unwrap();
     
     helper.pause_sale().unwrap(); // should succeed since auth module disabled    
+}
+
+#[test]
+#[should_panic]
+fn tc_8_1_3_pause_case_admin_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    helper.env.enable_auth_module();
+
+    helper.pause_sale().unwrap();    
+}
+
+#[test]
+fn tc_8_1_4_pause_case_super_admin_proof() -> Result<(), RuntimeError> {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.super_admin_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env)?;
+    
+    helper.env.enable_auth_module();
+
+    helper.pause_sale().unwrap();
+
+    Ok(())
+}
+
+#[test]
+fn tc_8_1_5_pause_case_owner_proof() -> Result<(), RuntimeError> {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.owner_badge_address.unwrap(), Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env)?;
+    
+    helper.env.enable_auth_module();
+
+    helper.pause_sale().unwrap();
+
+    Ok(())
+}
+
+#[test]
+#[should_panic]
+fn tc_8_1_6_pause_case_wrong_proof() {    
+
+    let mut helper = MigrationHelper::new().unwrap();   
+
+    let collection_size = 100u16;     
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();
+
+    helper.mint_till_start_sale(100, 10).unwrap();
+    
+    let _proof = ProofFactory::create_fungible_proof(helper.non_xrd_address, Decimal::ONE, CreationStrategy::Mock, &mut helper.env).unwrap();        
+
+    LocalAuthZone::push(_proof, &mut helper.env).unwrap();
+    
+    helper.env.enable_auth_module();
+
+    helper.pause_sale().unwrap();
 }
 
 #[test]
@@ -2204,5 +2667,538 @@ fn tc_8_3_4_pause_case_get_nfts_for_usd_afterwards_with_reservation() {
     
     helper.claim_nfts_for_usd_sale("CP001".to_owned(),  1u16, true).unwrap(); // this is explictely allowed for users having paid already
 }
-*/
 
+
+#[test]
+#[should_panic]
+fn test_case_complex_1()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(1).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_2()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(2).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_3()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(3).unwrap();
+}
+
+
+
+#[test]
+#[should_panic]
+fn test_case_complex_4()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(4).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_5()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(5).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_6()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(6).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_7()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(7).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_8()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(8).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_9()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(9).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_10()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(10).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_11()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(11).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_12()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(12).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_13()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(13).unwrap();
+}
+
+#[test]
+fn test_case_complex_14()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(14).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_15()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(15).unwrap();
+}
+
+#[test]
+fn test_case_complex_16()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(16).unwrap();
+}
+
+#[test]
+fn test_case_complex_17()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(17).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_18()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(18).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_19()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(19).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_complex_20()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("20")).unwrap();          
+
+    helper.complex_testcase(20).unwrap();
+}
+
+#[test]
+fn test_case_complex_21()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("1")).unwrap();          
+
+    helper.complex_testcase(21).unwrap();
+}
+
+#[test]
+fn test_case_complex_22()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("1")).unwrap();          
+
+    helper.complex_testcase(22).unwrap();
+}
+
+#[test]
+fn test_case_complex_23()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                
+    helper.instantiate(100u16,  dec!("1")).unwrap();          
+
+    helper.complex_testcase(23).unwrap();
+}
+
+// all auth checks for owner
+
+#[test]
+fn test_case_auth_case_add_nfts_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                    
+
+    let action = Action::AddNftsForSale;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_start_sale_nfts_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();      
+    helper.instantiate(100u16,  dec!("1")).unwrap();                              
+
+    let action = Action::StartSale;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_pause_sale_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();      
+    helper.instantiate(100u16,  dec!("1")).unwrap();                              
+
+    let action = Action::PauseSale;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_continue_sale_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();  
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                  
+
+    let action = Action::ContinueSale;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_use_manual_price_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();   
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                 
+
+    let action = Action::UseManualUsdPrice;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_use_runtime_price_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();                                    
+    helper.instantiate(100u16,  dec!("1")).unwrap();
+
+    let action = Action::UseRuntimeUsdPrice;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_withdraw_xrd_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                               
+
+    let action = Action::WithdrawXRD;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_collect_nft_owner()
+{
+    let mut helper = MigrationHelper::new().unwrap();   
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                 
+
+    let action = Action::CollectNftsInEmergency;
+    let proof_address = helper.owner_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+
+// all auth checks for super_admin
+
+
+#[test]
+fn test_case_auth_case_add_nfts_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();   
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                               
+
+    let action = Action::AddNftsForSale;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_start_sale_nfts_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();    
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                              
+
+    let action = Action::StartSale;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_pause_sale_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                             
+
+    let action = Action::PauseSale;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_continue_sale_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                             
+
+    let action = Action::ContinueSale;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_use_manual_price_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                             
+
+    let action = Action::UseManualUsdPrice;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+fn test_case_auth_case_use_runtime_price_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();       
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                           
+
+    let action = Action::UseRuntimeUsdPrice;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_withdraw_xrd_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();       
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                           
+
+    let action = Action::WithdrawXRD;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_collect_nft_super_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();      
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                            
+
+    let action = Action::CollectNftsInEmergency;
+    let proof_address = helper.super_admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+
+// all auth checks for admin
+
+
+#[test]
+fn test_case_auth_case_add_nfts_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();   
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                               
+
+    let action = Action::AddNftsForSale;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_start_sale_nfts_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();    
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                              
+
+    let action = Action::StartSale;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_pause_sale_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                             
+
+    let action = Action::PauseSale;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_continue_sale_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                             
+
+    let action = Action::ContinueSale;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_use_manual_price_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();     
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                             
+
+    let action = Action::UseManualUsdPrice;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_use_runtime_price_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();       
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                           
+
+    let action = Action::UseRuntimeUsdPrice;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_withdraw_xrd_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();       
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                           
+
+    let action = Action::WithdrawXRD;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn test_case_auth_case_collect_nft_admin()
+{
+    let mut helper = MigrationHelper::new().unwrap();      
+    helper.instantiate(100u16,  dec!("1")).unwrap();                                                            
+
+    let action = Action::CollectNftsInEmergency;
+    let proof_address = helper.admin_badge_address.unwrap();
+
+    helper.auth_testcase(proof_address, action).unwrap();
+}
+*/
