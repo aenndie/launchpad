@@ -33,6 +33,8 @@ pub struct MigrationHelper {
     pub pyro_auth: Option<PyroAuthorization>,    
     pub phs_bucket: Option<Bucket>, 
     pub pyros_bucket: Option<Bucket>, 
+    pub pyros_address: Option<ResourceAddress>, 
+    pub placeholders_address: Option<ResourceAddress>, 
     //pub phs_bucket: Bucket, 
     //pub pyros_bucket: Bucket, 
     pub latest_usd_price: Decimal, 
@@ -109,7 +111,9 @@ impl MigrationHelper {
             latest_usd_price: Decimal::ZERO, 
             owner_badge_address: None, 
             super_admin_badge_address: None, 
-            admin_badge_address: None 
+            admin_badge_address: None, 
+            pyros_address: None, 
+            placeholders_address: None 
         })
 
     
@@ -130,7 +134,10 @@ impl MigrationHelper {
         let (pyro_address, placeholder_address) = self.instantiate_minting( 
             admin_badge_address,     
             max_collection_size
-        )?;                        
+        )?;                 
+
+        self.pyros_address = Some (pyro_address);       
+        self.placeholders_address = Some (placeholder_address);       
 
         self.instantiate_sale(
             owner_badge_address, 
@@ -530,7 +537,7 @@ impl MigrationHelper {
     
     pub fn swap_placeholders_check(&mut self, amount_bucket: Decimal, amount: u16) -> Result<(), RuntimeError>
     {
-        let pyro = self.pyro_sale.unwrap();
+        // let pyro = self.pyro_sale.unwrap();
 
         let (_, _, _, d1, _, _, _) = self.get_internal_state();
 
@@ -948,21 +955,21 @@ impl MigrationHelper {
 
     fn get_placeholder_bucket(&mut self) -> Bucket
     {
-        let pyro_sale = self.pyro_sale.unwrap();
+        /*let pyro_sale = self.pyro_sale.unwrap();
         let state = self.env
         .read_component_state::<PyroSaleState, _>(pyro_sale)
-        .unwrap();    
+        .unwrap();    */
 
         let empty_it = std::iter::empty::<(NonFungibleLocalId,PyroNFT)>();
 
         BucketFactory::create_non_fungible_bucket(
-            state.placeholder_nfts_address, 
+            self.placeholders_address.unwrap(),
             empty_it, 
             Mock, 
             &mut self.env).unwrap()        
     }
 
-    fn dummy(&mut self) -> Result<(), RuntimeError>
+    /*fn dummy(&mut self) -> Result<(), RuntimeError>
     {
         let pyro_sale = self.pyro_sale.unwrap();
         let _state = self.env
@@ -970,19 +977,20 @@ impl MigrationHelper {
             .unwrap();        
 
         Ok(()) 
-    }
+    }*/
 
     fn get_pyro_bucket(&mut self) -> Bucket
     {
-        let pyro_sale = self.pyro_sale.unwrap();
+        /*let pyro_sale = self.pyro_sale.unwrap();
         let state = self.env
         .read_component_state::<PyroSaleState, _>(pyro_sale)
         .unwrap();
+    */
 
         let empty_it = std::iter::empty::<(NonFungibleLocalId,PyroNFT)>();
 
         BucketFactory::create_non_fungible_bucket(
-            state.pyro_nfts_address, 
+            self.pyros_address.unwrap(), 
             empty_it, 
             Mock, 
             &mut self.env).unwrap()
@@ -991,17 +999,20 @@ impl MigrationHelper {
     fn get_latest_usd_price(&mut self) -> Decimal
     {
         let pyro_sale = self.pyro_sale.unwrap();
+        /*;
         let state = self.env
         .read_component_state::<PyroSaleState, _>(pyro_sale)
         .unwrap();
 
-        state.latest_usd_price
+        state.latest_usd_price*/
+        
+        pyro_sale.get_latest_usd_price(&mut self.env).unwrap()
     }
 
     fn get_internal_state(&mut self) -> (Decimal, u16, u16, Decimal, u16, u16, Decimal)
     {
         let pyro_sale = self.pyro_sale.unwrap();
-        let state = self.env
+        /*let state = self.env
         .read_component_state::<PyroSaleState, _>(pyro_sale)
         .unwrap();
 
@@ -1020,6 +1031,9 @@ impl MigrationHelper {
         let g = state.collected_xrd_vault.amount(&mut self.env).unwrap();
 
         (a, b, c, d, e, f, g)
+        */
+
+        pyro_sale.get_internal_state(&mut self.env).unwrap()
     }
     
     

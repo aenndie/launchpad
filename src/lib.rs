@@ -59,6 +59,9 @@ mod pyrosale {
 
             // test helper            
             set_do_check_for_same_transaction => restrict_to: [super_admin, OWNER];                                       
+            get_internal_state => PUBLIC;                                       
+            get_latest_usd_price => PUBLIC;                                       
+
         }
     }
 
@@ -742,6 +745,31 @@ mod pyrosale {
         pub fn set_do_check_for_same_transaction(&mut self, do_check:bool)
         {
             self.do_check_for_same_transaction = do_check;
+        }
+
+        pub fn get_latest_usd_price(&self) -> Decimal 
+        {
+            self.latest_usd_price
+        }
+
+        pub fn get_internal_state(&self) -> (Decimal, u16, u16, Decimal, u16, u16, Decimal)
+        {
+            let a = self.placeholder_nfts_vault.amount();
+
+            let b = self.placeholders_sold_or_used_up_total;
+
+            let c = self.mapping_placeholder_nft.len() as u16;
+
+            let d = self.pyro_nfts_vault.amount();
+
+            let e = self.nft_ids.len() as u16;
+
+            let f = self.sold_usd_just_reserved;            
+
+            let g = self.collected_xrd_vault.amount();
+
+            (a, b, c, d, e, f, g)
+
         }
     }
 }

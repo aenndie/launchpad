@@ -16,7 +16,6 @@ fn tc_0_0_just_instantiate() {
     helper.instantiate(collection_size,  price).unwrap();   // should succeed 
 }
 
-/*
 
 #[test]
 #[should_panic]
@@ -3201,4 +3200,3 @@ fn test_case_auth_case_collect_nft_admin()
 
     helper.auth_testcase(proof_address, action).unwrap();
 }
-*/
