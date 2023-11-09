@@ -18,8 +18,9 @@ pub struct PyroNFT {
     pub shirts: String, 
     pub tattoos: String, 
     pub wall: String, 
-    pub traits: Vec<(String, String)>, 
+    pub attributes: Vec<(String, String)>, 
     pub key_image_hash: String,     
+    pub nft_storage: String,     
 }
 
 #[derive(NonFungibleData, ScryptoSbor)]
@@ -157,11 +158,11 @@ mod pyrominting {
             .globalize();
             
             (pyro, pyro_nft_manager.address(), placeholder_nft_manager.address())
-
         }        
 
         pub fn mint_pyro_nft(&mut self, nft_id:u16, 
-            pyro_id: u16, pyro_name:String, pyro_desc: String, pyro_filename:String, key_image_hash:String, pyro_traits: Vec<(String, String)>) -> Bucket  {                                                                                 
+            pyro_id: u16, pyro_name:String, pyro_desc: String, pyro_filename:String, key_image_hash:String, nft_storage:String, 
+            pyro_traits: Vec<(String, String)>) -> Bucket  {                                                                                 
 
             let id = nft_id as u64;
                                 
@@ -170,13 +171,13 @@ mod pyrominting {
 
             // create data struct first
             let nft_data = PyroNFT { 
+                id: pyro_id,
                 name: String::from( pyro_name), // e.g. #00001
                 description: String::from (pyro_desc),      
                 key_image_url: String::from(pyro_filename),
                 key_image_hash: String::from(key_image_hash),
-                collection: String::from(&self.collection_name),
-                id: pyro_id,
-                traits: pyro_traits.clone(), 
+                collection: String::from(&self.collection_name),                
+                attributes: pyro_traits.clone(),                 
                 bracers:    (&(&pyro_traits[0]).1).to_string(), 
                 ear_ring:   (&(&pyro_traits[1]).1).to_string(), 
                 glasses:    (&(&pyro_traits[2]).1).to_string(), 
@@ -187,7 +188,8 @@ mod pyrominting {
                 ring:       (&(&pyro_traits[7]).1).to_string(), 
                 shirts:     (&(&pyro_traits[8]).1).to_string(), 
                 tattoos:    (&(&pyro_traits[9]).1).to_string(), 
-                wall:       (&(&pyro_traits[10]).1).to_string()
+                wall:       (&(&pyro_traits[10]).1).to_string(), 
+                nft_storage:(&(&pyro_traits[11]).1).to_string(), 
             };    
             
             let rm_nft = self.pyro_nft_manager;         

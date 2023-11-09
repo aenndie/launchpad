@@ -573,27 +573,20 @@ mod pyrosale {
                 {
                     allowed = false; // reservation for this coupon was already done or nfts were even redeemed
 
+                    assert!(allowed, "NFTs for this coupon code {} were already reserved.", coupon_code);
                 }, 
                 None => 
                 {
                     allowed = true; // coupon was not yet used at all - fine      
                    
-
                     self.sold_usd_just_reserved += amount;
                     self.cap_left_sale          -= amount; // this is the actual reservation                    
 
                     self.sold_usd_total += amount;
                 }
             }
-
-            if allowed
-            {
-                self.coupons.insert(coupon_code, CouponState::Reserved(amount)); //false = only reseverd, not yet redeemed.
-            }
-            else
-            {
-                assert!(allowed, "NFTs for this coupon code {} were already reserved.", coupon_code);
-            }         
+            
+            self.coupons.insert(coupon_code, CouponState::Reserved(amount)); //false = only reseverd, not yet redeemed.
 
             self.check_assertions();                                   
 
@@ -611,25 +604,20 @@ mod pyrosale {
                 c) true  -> coupon was used and NFTs were already returned
             */
 
-            let coupon_bool = self.coupons.remove(&coupon_code);            
-
-            let allowed:bool;
+            let coupon_bool = self.coupons.remove(&coupon_code);                        
 
             match coupon_bool {
                 Some(state)=>
                 {
-                    allowed = state==CouponState::Reserved(amount);   // coupon was only used to reserve NFTs, but NFTs were not yet claimed
+                    let allowed = state==CouponState::Reserved(amount);   // coupon was only used to reserve NFTs, but NFTs were not yet claimed
 
-                    if allowed 
-                    {
-                        self.sold_usd_just_reserved -= amount; 
-                        self.cap_left_sale += Decimal::from(amount); // // cap_left_sale will be reduced again when returning placeholders
-                    }                    
+                    assert!(allowed, "Coupon code {} was already redeemed or amounts do mismatch.", coupon_code);
+                    
+                    self.sold_usd_just_reserved -= amount; 
+                    self.cap_left_sale += Decimal::from(amount); // // cap_left_sale will be reduced again when returning placeholders
                 }, 
                 None => 
                 {
-                    allowed = true; // coupon was not yet used at all.    
-
                     assert!(self.status_sale == StatusSale::SaleOngoing, "Sale is not started or paused.");                       
 
                     // TC 6.27a
@@ -638,15 +626,8 @@ mod pyrosale {
                     self.sold_usd_total += amount;
                 }
             }
-
-            if allowed
-            {
-                self.coupons.insert(coupon_code, CouponState::Claimed(amount));
-            }
-            else
-            {
-                assert!(allowed, "Coupon code {} was already redeemed or amounts do mismatch.", coupon_code);
-            }                                            
+            
+            self.coupons.insert(coupon_code, CouponState::Claimed(amount));                                            
 
             let phs = self.get_placeholders(amount);
 
