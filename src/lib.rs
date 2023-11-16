@@ -577,7 +577,8 @@ mod pyrosale {
                 }, 
                 None => 
                 {
-                    allowed = true; // coupon was not yet used at all - fine      
+                    // allowed = true; 
+                    // coupon was not yet used at all - fine      
                    
                     self.sold_usd_just_reserved += amount;
                     self.cap_left_sale          -= amount; // this is the actual reservation                    

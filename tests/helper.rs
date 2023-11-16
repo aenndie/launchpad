@@ -192,6 +192,8 @@ impl MigrationHelper {
         "Fully 3D and metaverse-ready NFTs with genuine utility.".to_owned(),
         "https://www.pyrosworld.com".to_owned(),
         "https://test.pyros-world.com/img/favicon.png".to_owned(),
+        "https://www.test.pyros-world.com/Home/License".to_owned(),
+        "https://bafybeigloxb64wepe6rapw3lqv2456jgfj37ncq2zsf7hcch3ik24rvg7a.ipfs.nftstorage.link/".to_owned(),
         "Pyros World - Placeholders Test 4.10.23".to_owned(),
         "These are anonymous placeholder NFTs needed for a real random sale. Please exchange them into real individual Pyro NFTs on our website.".to_owned(),
         "https://www.pyrosworld.com".to_owned(),
@@ -302,6 +304,8 @@ impl MigrationHelper {
         let pyro_desc = "Description ".to_owned() + &nft_id.to_string();
         let pyro_filename = "Filename ".to_owned() + &nft_id.to_string();
         let key_image_hash = "Hash ".to_owned() + &nft_id.to_string();
+
+        let nft_storage = "nft_storage ".to_owned() + &nft_id.to_string();        
         
         let pyro_traits: Vec<(String, String)> = vec![
             ("Bracer".to_owned(),       "Bracers ".to_owned()       + &nft_id.to_string()), 
@@ -317,9 +321,9 @@ impl MigrationHelper {
             ("Wall".to_owned(),         "Wall ".to_owned()          + &nft_id.to_string())
         ];        
 
-        let pyro_id = nft_id;
+        let pyro_id = nft_id;        
         
-        let pyro_nft = pyro_mint.mint_pyro_nft(nft_id, pyro_id, pyro_name, pyro_desc, pyro_filename, key_image_hash, pyro_traits, &mut self.env).unwrap();
+        let pyro_nft = pyro_mint.mint_pyro_nft(nft_id, pyro_id, pyro_name, pyro_desc, pyro_filename, key_image_hash,nft_storage, pyro_traits, &mut self.env).unwrap();
 
         pyro_nft
 

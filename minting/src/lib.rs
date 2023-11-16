@@ -33,52 +33,45 @@ pub struct PyroPlaceholder {
 
 #[blueprint]
 mod pyrominting {
-
-    enable_method_auth! { 
-        roles {
-            super_admin => updatable_by: [];
-            admin => updatable_by: [super_admin];
-        },       
-
+    enable_method_auth! {                 
         methods {             
             // Minting
-            mint_pyro_nft => restrict_to: [admin, super_admin, OWNER];  // hot wallet
-            mint_placeholder_nft => restrict_to: [admin, super_admin, OWNER]; //             
-            finish_minting => restrict_to: [admin, super_admin, OWNER]; //                         
+            mint_pyro_nft => restrict_to: [OWNER];  
+            mint_placeholder_nft => restrict_to: [OWNER]; 
+            finish_minting => restrict_to: [OWNER]; 
         }
-    }
-
+    }    
         //struct Pyro<'a> {
-        struct PyroMinting {            
-            // strings
-            collection_name: String,     
-            placeholder_nft_description: String,
-            placeholder_nft_filenames: Vec<String>,   
+    struct PyroMinting {            
+        // strings
+        collection_name: String,     
+        placeholder_nft_description: String,
+        placeholder_nft_filenames: Vec<String>,   
 
-            // status            
-            status_minting_finished: bool, 
-            // status_sale_started: bool,              
+        // status            
+        status_minting_finished: bool, 
+        // status_sale_started: bool,              
 
-            // constants
-            max_collection_size: u16,            
+        // constants
+        max_collection_size: u16,            
 
-            // resource managers                             
-            pyro_nft_manager: ResourceManager, 
-            placeholder_nft_manager: ResourceManager,        // resource manager for placeholder nfts   
-            
-            // Counters and datastructures
-            
-            // minting
-            minted_pyro_nfts: u16,       
-            minted_placeholder_nfts: u16,
-            expected_nft_traits_amount: u16
-        }    
+        // resource managers                             
+        pyro_nft_manager: ResourceManager, 
+        placeholder_nft_manager: ResourceManager,        // resource manager for placeholder nfts   
+        
+        // Counters and datastructures
+        
+        // minting
+        minted_pyro_nfts: u16,       
+        minted_placeholder_nfts: u16,
+        expected_nft_traits_amount: u16
+    }    
 
     impl PyroMinting {        
         pub fn instantiate(
             owner_badge_address:ResourceAddress, 
             collection_name: String, 
-            nft_name:String, pyro_nft_description:String, nft_info_url:String, nft_icon_url:String, 
+            nft_name:String, pyro_nft_description:String, nft_info_url:String, nft_icon_url:String, license_url:String, storage_url:String,
             placeholder_name:String, placeholder_description:String, placeholder_info_url:String, placeholder_icon_url:String, placeholder_nft_description: String, 
             placeholder_nft_filenames: Vec<String>, 
             max_collection_size:u16, expected_nft_traits_amount:u16
@@ -92,30 +85,45 @@ mod pyrominting {
 
             // create NFT resource - mint badge required
             let pyro_nft_manager =
-                    ResourceBuilder::new_integer_non_fungible::<PyroNFT>(OwnerRole::None) // 
+                    ResourceBuilder::new_integer_non_fungible::<PyroNFT>(
+                        OwnerRole::Updatable(rule!(require(owner_badge_address)))
+                    ) 
                     .metadata(metadata!(
+                        roles {
+                            metadata_locker => OWNER;
+                            metadata_locker_updater => OWNER;
+                            metadata_setter => OWNER;
+                            metadata_setter_updater => OWNER;
+                        },                    
                         init {
-                            "name" => nft_name, locked;
-                            // "symbol" => nft_symbol, locked;
+                            "name" => nft_name, locked;                            
                             "description" => pyro_nft_description, locked;
                             "info_url" => Url::of(nft_info_url), locked; //Url(nft_info_url), locked;
                             "icon_url" => Url::of(nft_icon_url), locked; //Url(nft_icon_url), locked;                                                        
-
+                            "license_url" => Url::of(license_url), locked; //Url(nft_icon_url), locked;                                                        
+                            "storage_url" => Url::of(storage_url), locked; //Url(nft_icon_url), locked;                                                                                    
                         })					)                                                     
                     .mint_roles(mint_roles!(
                         minter => rule!(require(global_caller(component_address)));
                         minter_updater => rule!(require(global_caller(component_address)));
-                     ))
+                     ))                    
                     .create_with_no_initial_supply(); 
 
 
             // create Placeholder NFT resource - mint badge required
             let placeholder_nft_manager =
-                    ResourceBuilder::new_integer_non_fungible::<PyroPlaceholder>(OwnerRole::None) // 
+                    ResourceBuilder::new_integer_non_fungible::<PyroPlaceholder>(
+                        OwnerRole::Updatable(rule!(require(owner_badge_address)))
+                    ) // 
                     .metadata(metadata!(
+                        roles {
+                            metadata_locker => OWNER;
+                            metadata_locker_updater => OWNER;
+                            metadata_setter => OWNER;
+                            metadata_setter_updater => OWNER;
+                        },                    
                         init {
-                            "name" => placeholder_name, locked;
-                            // "symbol" => placeholder_symbol, locked;
+                            "name" => placeholder_name, locked;                            
                             "description" => placeholder_description, locked;
                             "info_url" => Url::of(placeholder_info_url), locked;//Url(placeholder_info_url), locked;
                             "icon_url" => Url::of(placeholder_icon_url), locked; //Url(placeholder_icon_url), locked;                            
@@ -150,10 +158,10 @@ mod pyrominting {
                 rule!(require(owner_badge_address))))
             /*.roles( 
                 roles!(
-                    super_admin => rule!(require_amount(dec!(1), super_admin_badge_address)); 
-                    admin => rule!(require(admin_badge_address));
+                    super_admin => rule!(require_amount(dec!(1), owner_badge_address)); 
+                    //admin => rule!(require(admin_badge_address));
                 )
-            ) */
+            ) */ 
             .with_address(address_reservation)                             
             .globalize();
             
@@ -161,7 +169,7 @@ mod pyrominting {
         }        
 
         pub fn mint_pyro_nft(&mut self, nft_id:u16, 
-            pyro_id: u16, pyro_name:String, pyro_desc: String, pyro_filename:String, key_image_hash:String, nft_storage:String, 
+            pyro_id: u16, pyro_name:String, pyro_desc: String, pyro_filename:String, key_image_hash:String, nft_storage:String,
             pyro_traits: Vec<(String, String)>) -> Bucket  {                                                                                 
 
             let id = nft_id as u64;
@@ -176,7 +184,8 @@ mod pyrominting {
                 description: String::from (pyro_desc),      
                 key_image_url: String::from(pyro_filename),
                 key_image_hash: String::from(key_image_hash),
-                collection: String::from(&self.collection_name),                
+                collection: String::from(&self.collection_name),                      
+                nft_storage: String::from(nft_storage),                 
                 attributes: pyro_traits.clone(),                 
                 bracers:    (&(&pyro_traits[0]).1).to_string(), 
                 ear_ring:   (&(&pyro_traits[1]).1).to_string(), 
@@ -188,8 +197,7 @@ mod pyrominting {
                 ring:       (&(&pyro_traits[7]).1).to_string(), 
                 shirts:     (&(&pyro_traits[8]).1).to_string(), 
                 tattoos:    (&(&pyro_traits[9]).1).to_string(), 
-                wall:       (&(&pyro_traits[10]).1).to_string(), 
-                nft_storage:(&(&pyro_traits[11]).1).to_string(), 
+                wall:       (&(&pyro_traits[10]).1).to_string(),                 
             };    
             
             let rm_nft = self.pyro_nft_manager;         
