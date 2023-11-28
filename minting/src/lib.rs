@@ -5,7 +5,7 @@ pub struct PyroNFT {
     pub id: u16,     
     pub name: String, 
     pub description: String, 
-    key_image_url: String,     
+    pub key_image_url: Url,     
     pub collection: String,    
     pub bracers: String, 
     pub ear_ring: String, 
@@ -20,14 +20,14 @@ pub struct PyroNFT {
     pub wall: String, 
     pub attributes: Vec<(String, String)>, 
     pub key_image_hash: String,     
-    pub nft_storage: String,     
+    pub nft_storage: Url,     
 }
 
 #[derive(NonFungibleData, ScryptoSbor)]
 pub struct PyroPlaceholder {
     pub id: u16,    
     pub description: String, 
-    pub key_image_url: String, 
+    pub key_image_url: Url, 
     pub collection: String
 }
 
@@ -182,10 +182,10 @@ mod pyrominting {
                 id: pyro_id,
                 name: String::from( pyro_name), // e.g. #00001
                 description: String::from (pyro_desc),      
-                key_image_url: String::from(pyro_filename),
+                key_image_url: Url::of(pyro_filename),
                 key_image_hash: String::from(key_image_hash),
-                collection: String::from(&self.collection_name),                      
-                nft_storage: String::from(nft_storage),                 
+                collection: String::from(&self.collection_name),                                      
+                nft_storage: Url::of(nft_storage),                 
                 attributes: pyro_traits.clone(),                 
                 bracers:    (&(&pyro_traits[0]).1).to_string(), 
                 ear_ring:   (&(&pyro_traits[1]).1).to_string(), 
@@ -228,7 +228,7 @@ mod pyrominting {
             let nft_data = PyroPlaceholder {                 
                 id: placeholder_id as u16,                                
                 description: String::from (&self.placeholder_nft_description),
-                key_image_url: String::from(placeholder_nft_filename),
+                key_image_url: Url::of(placeholder_nft_filename),
                 collection: String::from(&self.collection_name)
             };    
                         

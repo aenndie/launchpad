@@ -9,7 +9,8 @@ pub enum StatusSale {
 
 #[derive(ScryptoSbor, PartialEq)]
 pub enum PriceStrategy {
-    Runtime,
+    // Runtime,
+    /* ORACLE*/ Oracle, 
     Manual(Decimal)
 }
 
@@ -19,10 +20,28 @@ pub enum CouponState {
     Claimed(u16)
 }
 
+/*ORACLE */
+#[derive(ScryptoSbor, PartialEq, Eq, PartialOrd, Ord, Debug, Copy, Clone)]
+pub struct PriceData {
+    pub price: Decimal,
+    pub timestamp: i64,
+}
+
+
 #[blueprint]
 mod pyrosale {    
+    /* ORACLE  extern_blueprint! {
+        "package_rdx1phuhdg98xt90ygva6fgh357vtg20aps8mkmrdy6wn6mp4myn24rhyf",
+        Religant {
+        fn get_price(&self) -> Option<PriceData>;
+        }
+    }
 
-    enable_method_auth! { 
+    const RELIGANT: Global<Religant> =
+        global_component!(Religant, "component_rdx1czqqs4t8f62jeyp47ctyqwmtk3vnf9sffnqd9lu7tgtgtvshj6x9lp");
+
+
+     */ enable_method_auth! { 
         roles {
             super_admin => updatable_by: [];
             admin => updatable_by: [super_admin];
@@ -39,8 +58,10 @@ mod pyrosale {
             
             // Sale XRD
             set_price => restrict_to: [super_admin, OWNER];                                     
-            use_manual_usd_price => restrict_to: [super_admin, OWNER];  
-            use_runtime_usd_price => restrict_to: [super_admin, OWNER];                          
+            use_manual_xrd_price => restrict_to: [super_admin, OWNER];  
+            //use_runtime_usd_price => restrict_to: [super_admin, OWNER];                          
+            /* ORACLE*/  use_oracle_xrd_price => restrict_to: [super_admin, OWNER];
+            set_oracle_component_address => restrict_to: [super_admin, OWNER];
             
             // Buying with XRD
             buy_placeholders => PUBLIC;             
@@ -60,7 +81,7 @@ mod pyrosale {
             // test helper            
             set_do_check_for_same_transaction => restrict_to: [super_admin, OWNER];                                       
             get_internal_state => PUBLIC;                                       
-            get_latest_usd_price => PUBLIC;                                       
+            // get_latest_usd_price => PUBLIC;                                       
 
         }
     }
@@ -116,11 +137,13 @@ mod pyrosale {
             added_nfts_total: u16,
             sold_xrd_total: u16,    
             sold_usd_total: u16,    
-            latest_usd_price: Decimal,                           
+            latest_xrd_price: Decimal,                           
             placeholders_unassigned:u16,            // = self.placeholders_sold_or_used_up_total + placeholders_kept_outside - self.placeholders_mapped
 
             // test helper
             do_check_for_same_transaction:bool,
+
+            oracle_adress: ComponentAddress
         }
     
 
@@ -129,7 +152,8 @@ mod pyrosale {
             owner_badge_address:ResourceAddress, super_admin_badge_address:ResourceAddress, admin_badge_address:ResourceAddress,
             pyro_nfts_address: ResourceAddress, placeholder_nfts_address:ResourceAddress, 
             price: Decimal,            
-            dapp_definition_address:ComponentAddress, max_amount_nfts_per_buy_or_change:u16,            
+            dapp_definition_address:ComponentAddress, max_amount_nfts_per_buy_or_change:u16, 
+            oracle_adress:ComponentAddress
             )             
             -> Global<PyroSale> 
         {                                    
@@ -137,8 +161,9 @@ mod pyrosale {
             let (address_reservation, _component_address) =
                 Runtime::allocate_component_address(PyroSale::blueprint_id());                                                                                                 
 
+            
             // init usd price
-            let usd_price = Runtime::get_usd_price();                 
+            let xrd_price = 1 / Runtime::get_usd_price();                 
         
             // Instantiate a Pyro component
             Self {
@@ -155,7 +180,7 @@ mod pyrosale {
                 amount_stage1: 0, 
                 amount_stage2: 0, 
 
-                price_strategy: PriceStrategy::Runtime, 
+                price_strategy: PriceStrategy::Oracle, 
 
                 pyro_nfts_vault: Vault::new(pyro_nfts_address),
                 placeholder_nfts_vault: Vault::new(placeholder_nfts_address), 
@@ -177,10 +202,11 @@ mod pyrosale {
                 added_nfts_total: 0u16,                                 
                 sold_xrd_total: 0u16, 
                 sold_usd_total: 0u16,                                                 
-                latest_usd_price: usd_price,                 
+                latest_xrd_price: xrd_price,                 
                 placeholders_unassigned: 0u16, 
                 
-                do_check_for_same_transaction: true
+                do_check_for_same_transaction: true, 
+                oracle_adress
             }
             .instantiate()            
             .prepare_to_globalize(OwnerRole::Fixed(
@@ -469,24 +495,25 @@ mod pyrosale {
                                              use_stage2 * self.price_nft_usd_stage2 +
                                              use_stage3 * self.price_nft_usd_stage3;
                                 
-            let usd_price = match self.price_strategy 
+            let xrd_price = match self.price_strategy 
             {
-                PriceStrategy::Runtime => Runtime::get_usd_price(), 
+                //PriceStrategy::Runtime => 1 / Runtime::get_usd_price(), 
+                /* ORACLE */   PriceStrategy::Oracle => self.get_oracle_price(),  /**/
                 PriceStrategy::Manual( manual_price) => manual_price,                 
             };
 
             
-            assert!(usd_price > Decimal::ZERO, "USD price must be greater than zero.");
+            assert!(xrd_price > Decimal::ZERO, "XRD price must be greater than zero.");
             
-            self.latest_usd_price = usd_price;
+            self.latest_xrd_price = xrd_price;
 
             let total_price_usd_dec = Decimal::from(total_price_usd);            
-            let price_xrd = total_price_usd_dec * usd_price;      
+            let price_in_xrd = total_price_usd_dec / xrd_price;      
 
             // let's be a bit pathetic here to make sure we don't sell anything for free :-)
-            assert!(price_xrd > Decimal::ZERO, "USD price must be greater than zero.");      
+            assert!(price_in_xrd > Decimal::ZERO, "USD price must be greater than zero.");      
 
-            price_xrd
+            price_in_xrd
         }
         
         // buy place holders via XRD
@@ -704,19 +731,40 @@ mod pyrosale {
             self.pyro_nfts_vault.take (amount)
         }        
 
-        pub fn use_manual_usd_price(&mut self, manual_usd_price: Decimal) {
+        pub fn use_manual_xrd_price(&mut self, manual_xrd_price: Decimal) {
                         
-            assert!(manual_usd_price > Decimal::ZERO, "Price must be greater than zero.");              
+            assert!(manual_xrd_price > Decimal::ZERO, "Price must be greater than zero.");              
 
-            self.price_strategy = PriceStrategy::Manual(manual_usd_price);            
-            self.latest_usd_price = manual_usd_price;
+            self.price_strategy = PriceStrategy::Manual(manual_xrd_price);            
+            self.latest_xrd_price = manual_xrd_price;
         }
 
-        pub fn use_runtime_usd_price(&mut self) {                                                
+        /*pub fn use_runtime_usd_price(&mut self) {                                                
 
             self.price_strategy = PriceStrategy::Runtime;            
 
-            self.latest_usd_price = Runtime::get_usd_price();
+            self.latest_xrd_price = 1 / Runtime::get_usd_price();
+        }*/
+
+        /* ORACLE */   fn get_oracle_price(&mut self) -> Decimal 
+        {
+            // RELIGANT.get_price().unwrap().price            
+            let comp: Global<AnyComponent> = Global::from(self.oracle_adress);
+            let price:PriceData = comp.call_raw("get_price", scrypto_args!());
+
+            price.price
+        }
+
+        pub fn use_oracle_xrd_price(&mut self) {                                                
+
+            self.price_strategy = PriceStrategy::Oracle;            
+
+            self.latest_xrd_price = self.get_oracle_price();
+        }  /**/
+
+        pub fn set_oracle_component_address(&mut self, new_oracle_address:ComponentAddress)
+        {
+            self.oracle_adress = new_oracle_address;
         }
 
         fn set_placeholders_unassigned(&mut self)
@@ -729,10 +777,10 @@ mod pyrosale {
             self.do_check_for_same_transaction = do_check;
         }
 
-        pub fn get_latest_usd_price(&self) -> Decimal 
+        /*pub fn get_latest_usd_price(&self) -> Decimal 
         {
-            self.latest_usd_price
-        }
+            return 1 / self.latest_xrd_price
+        }*/
 
         pub fn get_internal_state(&self) -> (Decimal, u16, u16, Decimal, u16, u16, Decimal)
         {
@@ -753,5 +801,5 @@ mod pyrosale {
             (a, b, c, d, e, f, g)
 
         }
-    }
+    }    
 }

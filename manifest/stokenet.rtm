@@ -18,19 +18,21 @@ Super Admin Badge: resource_tdx_2_1t4gx2d3nu7yu2gqeghdzylaj33u7378y4n26e687rqeq7
 Admin Badge: resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr
 
 ******************************************************************************************
-Minting package: package_tdx_2_1p5ag4ky74gsu4v2vjt096c52h3ljmxkr33x03jtgxv5gk9vgy4h674
+Minting package: package_tdx_2_1phuqhy6cwey38grfh307r00up6kshcj0pa2za5w7z3jnq2lqt6ur7a
 
 CALL_FUNCTION
-    Address("package_tdx_2_1p5ag4ky74gsu4v2vjt096c52h3ljmxkr33x03jtgxv5gk9vgy4h674")
+    Address("package_tdx_2_1phuqhy6cwey38grfh307r00up6kshcj0pa2za5w7z3jnq2lqt6ur7a")
 	"PyroMinting"
     "instantiate"
 	Address("resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr")
-	"Pyros World - Stokenet Test collection 30.10.23"
-	"Pyros World - Stokenet 30.10.23"
+	"Pyros World - Stokenet Test collection 28.11.23"
+	"Pyros World - Stokenet 28.11.23"
 	"Fully 3D and metaverse-ready NFTs with genuine utility."
-	"https://www.pyrosworld.com"
+	"https://www.pyrosworld.com"	
 	"https://www.pyrosworld.com/img/favicon_pyro_nft.png"
-	"Pyros World - Placeholders 30.10.23"
+	"https://www.pyrosworld.com/Home/License"
+	"https://bafybeigloxb64wepe6rapw3lqv2456jgfj37ncq2zsf7hcch3ik24rvg7a.ipfs.nftstorage.link/"
+	"Pyros World - Placeholders 28.11.23"
 	"These are anonymous placeholder NFTs needed for a real random sale. Please exchange them into real individual Pyro NFTs on our website."
 	"https://www.pyrosworld.com"
 	"https://www.pyrosworld.com/img/favicon_placeholder_nft.png"
@@ -45,38 +47,40 @@ CALL_FUNCTION
 		"https://test.pyros-world.com/img/Blanko_7.jpg", 
 		"https://test.pyros-world.com/img/Blanko_8.jpg" 
 	)
-	1000u16
+	10000u16
 	11u16;
 CALL_METHOD
 	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
 	"deposit_batch"
 	Expression("ENTIRE_WORKTOP");		
 
-Component: component_tdx_2_1cqr95p9tna5he8tsnfxqg3jxl3dxjdruuxdga2cdm82g4cmlvfyh72
-Pyro NFTs: resource_tdx_2_1nt2vq0p2kunrjkzp74y36g6zrj88jvh5crk2kmaf8q4rjsr9yvkh8d
-Placeholder NFTs: resource_tdx_2_1n22vq990h6fxg9cvmsmljf5gdkz9hdfcwv8knntn833pf9fdy78zdg
+Component: component_tdx_2_1cr5m4sdx7jwpghds3gm0ux7r3gjexdcannsus55ltw2mdjsc70axdf
+Pyro NFTs: resource_tdx_2_1nt00xyv5y9wserfsc5le5zptjfpkerrj5wkldd0au54fx4emdtx8ea
+Placeholder NFTs: resource_tdx_2_1n24ferj7flctpms24dc8s4uaprhwv7qh64tefh6sxe64zdkwc6d0vh
 
 ******************************************************************************************
-Sale package: package_tdx_2_1phn97qzymjdpaqj5ry54pfekh0t9qclz08a7ejz6qrurea9qex2y9g
+Sale package: package_tdx_2_1p484x0jyg6yh6ua7udsyvheg3z9vutd7ntxnk73u0qxp06p55lkyke
 
 CALL_FUNCTION
-    Address("package_tdx_2_1phn97qzymjdpaqj5ry54pfekh0t9qclz08a7ejz6qrurea9qex2y9g")
+    Address("package_tdx_2_1p484x0jyg6yh6ua7udsyvheg3z9vutd7ntxnk73u0qxp06p55lkyke")
 	"PyroSale"
     "instantiate_pyro"
 	Address("resource_tdx_2_1th5pgxcg96emd55vz3ek9selpx0v35r9zp20rt8x0p8gtpvr7a8dkn")
 	Address("resource_tdx_2_1t4gx2d3nu7yu2gqeghdzylaj33u7378y4n26e687rqeq7ujfe97zhq")
 	Address("resource_tdx_2_1t4sguh33taymzaaz7w05rvjatykzhv0fvkv0xp05050rtk5exttfvr")
-	Address("resource_tdx_2_1nt2vq0p2kunrjkzp74y36g6zrj88jvh5crk2kmaf8q4rjsr9yvkh8d")
-	Address("resource_tdx_2_1n22vq990h6fxg9cvmsmljf5gdkz9hdfcwv8knntn833pf9fdy78zdg")
+	Address("resource_tdx_2_1nt00xyv5y9wserfsc5le5zptjfpkerrj5wkldd0au54fx4emdtx8ea")
+	Address("resource_tdx_2_1n24ferj7flctpms24dc8s4uaprhwv7qh64tefh6sxe64zdkwc6d0vh")
 	Decimal("20.0")
 	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
-	50u16;
+	50u16
+	Address("component_tdx_2_1cprtv9hkwqeysudwe9q8vq9k9zrmrfz2x36s8gmhdp2dmqlj9xtyed")	
+	;
 CALL_METHOD
 	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
 	"deposit_batch"
 	Expression("ENTIRE_WORKTOP");			
 
-Component: component_tdx_2_1cr7a2p5q6uhvqhkwkrh769v7ggaq4mcs7usn2kqjmwsk3n84ce6lqs
+Component: component_tdx_2_1czvlwhxsdhj7cyalu5fjq329wjmvxkwgcwy4u3yqqrufqa9qzv57a9
 
 ******************************************************************************************
 package_tdx_2_1p4ht8egtqy7447ytmashghs7es6326ryfg2kuknvah92ukz0ey967x
@@ -197,14 +201,11 @@ It should be GlobalAddress:from(dapp_definition_address) assuming you're passing
 Set metadata dApp-> component:
 
 SET_METADATA
-    Address("account_tdx_e_12yplw6vnznlcht3e5pvgs703lrdn3a8sanyrlnxqt2dyc9h28dr0kd")
+    Address("account_rdx12xt8vtz2nluk6a7n2xy73h4nnas862e90ytkwezxgumfn7s2kvcvke")
     "claimed_entities"
     Enum<136u8>(
         Array<Address>(
-            Address("component_tdx_e_1cqwakw6rhaj9fme2zlff6jzm5ksm8pc97dmgrg2725c7dkspd3833t"), 
-			Address("component_tdx_e_1cqs09h7wsexmu8fmn4uveky256nvgnkcslcujyawd2u7yu6vds0scm"), 
-			Address("component_tdx_e_1crqvpgepzky9pwrlhfmycpchheddddvu7xgfm76s4rhd6xnp08lu2s"), 			
-			Address("component_tdx_e_1cpqksfv87dqgw7mzgnacryu6ge8jsa8glzfnmtzvmyxd2kfxaydgwj"), 						
+            Address("component_rdx1cppwj5gxwszkg43f29vhl0nhldumsg8nxfycswjs3l8rw0cvews0y2")						
         )
     )
 ;
@@ -217,3 +218,14 @@ SET_METADATA
 	Enum<Metadata::Url>("https://test.pyros-world.com/img/favicon.png");
 
 
+
+Dummy Oracle:
+package_tdx_2_1p5szlgh4ve8h3uptq92j5h73pplh5na9yw0kufydcgzaufwdnhlq8q
+
+CALL_FUNCTION
+    Address("package_tdx_2_1p5szlgh4ve8h3uptq92j5h73pplh5na9yw0kufydcgzaufwdnhlq8q")
+	"DummyOracle"
+    "instantiate"
+	Decimal("0.05");	
+
+component_tdx_2_1cprtv9hkwqeysudwe9q8vq9k9zrmrfz2x36s8gmhdp2dmqlj9xtyed

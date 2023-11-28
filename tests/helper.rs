@@ -3,6 +3,7 @@ use sale::test_bindings::*;
 use minting::{test_bindings::*, PyroNFT};
 use authorization::test_bindings::*;
 use dummy_account::test_bindings::*;
+use dummy_oracle::test_bindings::*;
 use scrypto::this_package; // resource::ScryptoBucket
 use scrypto_test::prelude::*;
 
@@ -13,7 +14,7 @@ pub enum Action {
     PauseSale, 
     ContinueSale, 
     UseManualUsdPrice, 
-    UseRuntimeUsdPrice, 
+    UseOracleUsdPrice, 
     WithdrawXRD,
     CollectNftsInEmergency
 }
@@ -40,7 +41,9 @@ pub struct MigrationHelper {
     pub latest_usd_price: Decimal, 
     pub owner_badge_address: Option<ResourceAddress>, 
     pub super_admin_badge_address: Option<ResourceAddress>, 
-    pub admin_badge_address: Option<ResourceAddress>
+    pub admin_badge_address: Option<ResourceAddress>,     
+    pub dummy_oracle_address:ComponentAddress, 
+    pub dummy_oracle:DummyOracle
 }
 
 
@@ -75,8 +78,16 @@ impl MigrationHelper {
             &mut env
         )?;
         
-        let account = DummyAccount::instantiate(dummy_account_package_address, &mut env)?;
-        let dapp_definition = account.address(&mut env)?;
+        let dummy_account = DummyAccount::instantiate(dummy_account_package_address, &mut env)?;
+
+        let dummy_oracle_package_address = Package::compile_and_publish(
+            "./dummy_oracle",
+            &mut env
+        )?;
+        
+        let dummy_oracle = DummyOracle::instantiate(dec!("2"), dummy_oracle_package_address, &mut env)?;
+
+        let dapp_definition = dummy_account.address(&mut env)?;
 
         let non_xrd_token = ResourceBuilder::new_fungible(OwnerRole::None)
             .divisibility(18)
@@ -92,6 +103,8 @@ impl MigrationHelper {
 
         let non_xrd_address = non_xrd_token.resource_address(&mut env)?;
         let xrd_address = xrd_token.resource_address(&mut env)?;
+
+        let dummy_oracle_address = dummy_oracle.address(&mut env).unwrap();
     
         Ok(Self {
             env,
@@ -113,7 +126,9 @@ impl MigrationHelper {
             super_admin_badge_address: None, 
             admin_badge_address: None, 
             pyros_address: None, 
-            placeholders_address: None 
+            placeholders_address: None, 
+            dummy_oracle_address, 
+            dummy_oracle
         })
 
     
@@ -225,24 +240,27 @@ impl MigrationHelper {
                     admin_badge_address, 
                     pyro_nfts_address, 
                     placeholder_nfts_address, 
-                price,                                                 
-                self.dapp_definition,
-                50u16,                
-                self.sale_package_address,                
-                &mut self.env)?;
+                    price,                                                 
+                    self.dapp_definition,
+                    50u16,                                    
+                    self.dummy_oracle_address,           
+                    self.sale_package_address,     
+                    &mut self.env)?;
         
         self.env.disable_costing_module();
 
         self.pyro_sale = Some (pyro_sale);  
 
-        //self.dummy();        
-        pyro_sale.use_manual_usd_price(Decimal::ONE, &mut self.env)?;                
+        //
+        let xrd_price = dec!("0.05");
+        let usd_price = dec!("20.0");
+        pyro_sale.use_manual_xrd_price(xrd_price, &mut self.env)?;                
         pyro_sale.set_do_check_for_same_transaction(false, &mut self.env)?;
         
         self.phs_bucket         = Some ( self.get_placeholder_bucket() );
         self.pyros_bucket       = Some ( self.get_pyro_bucket() );
         
-        self.latest_usd_price   = self.get_latest_usd_price();
+        self.latest_usd_price   = usd_price; // self.get_latest_usd_price();
 
         Ok(())
     }
@@ -839,8 +857,8 @@ impl MigrationHelper {
         }
         else
         {
-            let usd_price = dec!("15.0");
-            pyro_sale.use_manual_usd_price( usd_price, &mut self.env).unwrap();
+            let usd_price = dec!("4.0");
+            pyro_sale.use_manual_xrd_price( 1 / usd_price, &mut self.env).unwrap();
 
             // set price of an NFT in USD to 20 USD
             let price_in_usd = dec!("20.0");
@@ -855,18 +873,20 @@ impl MigrationHelper {
         }
         else if step==23
         {
-            let prev_usd_price = self.get_latest_usd_price();
+            // let prev_usd_price = self.get_latest_usd_price();
 
-            self.env.enable_costing_module();
-            pyro_sale.use_runtime_usd_price( &mut self.env).unwrap();
+            //self.env.enable_costing_module();
+            // pyro_sale.use_runtime_usd_price( &mut self.env).unwrap();
+            self.dummy_oracle.set_price( dec!("0.08"), &mut self.env ).unwrap();
+            pyro_sale.use_oracle_xrd_price(&mut self.env).unwrap();
 
-            let current_usd_price = self.get_latest_usd_price();
+            // let current_usd_price = self.get_latest_usd_price();
 
-            assert_ne!(prev_usd_price, current_usd_price, "Price should have changed by using runtime_price");
+            // assert_ne!(prev_usd_price, current_usd_price, "Price should have changed by using runtime_price");
 
-            self.buy_placeholders_check(true, 1, current_usd_price*dec!("20.0"), true, dec!("0.0")).unwrap();            
+            self.buy_placeholders_check(true, 1, dec!("20.0") / dec!("0.08"), true, dec!("0.0")).unwrap();            
 
-            self.env.disable_costing_module();
+            //self.env.disable_costing_module();
         }
         
         Ok(())
@@ -878,7 +898,7 @@ impl MigrationHelper {
         let mut pyro_mint = self.pyro_minting.unwrap();
         let mut pyro_sale = self.pyro_sale.unwrap();
 
-        pyro_sale.use_manual_usd_price(dec!("1"), &mut self.env).unwrap();
+        pyro_sale.use_manual_xrd_price(dec!("1"), &mut self.env).unwrap();
 
         
         // prepare state depending on action
@@ -937,12 +957,12 @@ impl MigrationHelper {
             }, 
             Action::UseManualUsdPrice =>
             {                
-                pyro_sale.use_manual_usd_price(dec!("1.0"), &mut self.env).unwrap();                                
+                pyro_sale.use_manual_xrd_price(dec!("1.0"), &mut self.env).unwrap();                                
             }, 
-            Action::UseRuntimeUsdPrice =>
+            Action::UseOracleUsdPrice =>
             {
                 self.env.enable_costing_module();
-                pyro_sale.use_runtime_usd_price(&mut self.env).unwrap();
+                pyro_sale.use_oracle_xrd_price(&mut self.env).unwrap();
                 self.env.disable_costing_module();
             }, 
             Action::WithdrawXRD =>
@@ -1000,7 +1020,7 @@ impl MigrationHelper {
             &mut self.env).unwrap()
     }
 
-    fn get_latest_usd_price(&mut self) -> Decimal
+    /*fn get_latest_usd_price(&mut self) -> Decimal
     {
         let pyro_sale = self.pyro_sale.unwrap();
         /*;
@@ -1011,7 +1031,7 @@ impl MigrationHelper {
         state.latest_usd_price*/
         
         pyro_sale.get_latest_usd_price(&mut self.env).unwrap()
-    }
+    }*/
 
     fn get_internal_state(&mut self) -> (Decimal, u16, u16, Decimal, u16, u16, Decimal)
     {
@@ -1039,6 +1059,34 @@ impl MigrationHelper {
 
         pyro_sale.get_internal_state(&mut self.env).unwrap()
     }
-    
-    
+
+    pub fn use_oracle_xrd_price(&mut self, price:Decimal)
+    {
+        self.pyro_sale.unwrap().use_oracle_xrd_price(&mut self.env).unwrap();
+        
+        self.dummy_oracle.set_price(price, &mut self.env).unwrap();
+
+        let new_price = self.dummy_oracle.get_price(&mut self.env).unwrap();
+
+        assert_eq!(price, new_price.price);        
+
+        self.latest_usd_price = 1 / price;
+    }      
+
+    pub fn use_new_oracle(&mut self) 
+    {
+        let dummy_oracle_package_address = Package::compile_and_publish(
+            "./dummy_oracle",
+            &mut self.env
+        ).unwrap();
+        
+        let dummy_oracle = DummyOracle::instantiate(dec!("2"), dummy_oracle_package_address, &mut self.env).unwrap();
+
+        let dummy_oracle_address = dummy_oracle.address(&mut self.env).unwrap();
+
+        self.dummy_oracle = dummy_oracle;
+        self.dummy_oracle_address = dummy_oracle_address;
+
+        self.pyro_sale.unwrap().set_oracle_component_address(dummy_oracle_address, &mut self.env).unwrap();
+    }
 }

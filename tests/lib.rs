@@ -5,6 +5,7 @@ use helper::*;
 const POS_DIFF_1:Decimal = dec!("1");
 const POS_DIFF_ATO:Decimal = dec!("0.000000000000000001"); // 10^-18
 
+
 #[test]
 fn tc_0_0_just_instantiate() {    
 
@@ -15,7 +16,6 @@ fn tc_0_0_just_instantiate() {
         
     helper.instantiate(collection_size,  price).unwrap();   // should succeed 
 }
-
 
 #[test]
 #[should_panic]
@@ -385,6 +385,7 @@ fn tc_1_9_1_price_correct_case_range1() {
     helper.buy_placeholders_check(true,  5u16, amount_token, true, dec!("0.0")).unwrap();    
 }
 
+
 #[test]
 fn tc_1_9_2_price_correct_case_range1_and_range_2() {    
 
@@ -499,6 +500,190 @@ fn tc_1_9_6_price_correct_case_range3() {
     
     // buy 45 placeholder: should cost 45*25= 1.125
     let amount_token = 1125 * helper.latest_usd_price;
+    helper.buy_placeholders_check(true,  45u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_1_price_correct_oracle_case_range1() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // buy 5 placeholder: should cost 5x15=75
+    let amount_token = 75* helper.latest_usd_price;
+    helper.buy_placeholders_check(true,  5u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_1_1_price_correct_oracle_case_range1_new_oracle() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    helper.use_new_oracle();
+    let xrd_price = dec!("0.05");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // buy 5 placeholder: should cost 5x15=75
+    let amount_token = 75 / dec!("0.05");
+    helper.buy_placeholders_check(true,  5u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_2_price_correct_oracle_case_range1_and_range_2() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // buy 12 placeholder: should cost 10x15 + 2x20 = 150 + 40 = 190
+    let amount_token = 190  / dec!("0.08");
+    helper.buy_placeholders_check(true,  12u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_3_price_correct_oracle_case_range1_and_range2_and_range3() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // buy 23 placeholder: should cost 10x15 + 10x20 + 3*25 = 150 + 200 + 75 = 425
+    let amount_token = 425 / dec!("0.08");
+    helper.buy_placeholders_check(true,  23u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_4_price_correct_oracle_case_range2() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // at first 12 placeholders -> 190
+    let amount_token = 190 / dec!("0.08");
+    helper.buy_placeholders(true,  12u16, amount_token).unwrap();
+    
+    // buy 5 placeholder: should cost 5x20=100
+    let amount_token = 100 / dec!("0.08");
+    helper.buy_placeholders_check(true,  5u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_5_price_correct_oracle_case_range2_and_range3() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // at first 12 placeholders -> 10*15 + 2*20 = 190
+    let amount_token = 190 / dec!("0.08");
+    helper.buy_placeholders(true,  12u16, amount_token).unwrap();
+    
+    // buy 10 placeholder: should cost 8x20 + 2x25 = 160 + 50 = 210
+    let amount_token = 210 / dec!("0.08");
+    helper.buy_placeholders_check(true,  10u16, amount_token, true, dec!("0.0")).unwrap();    
+}
+
+#[test]
+fn tc_1_10_6_price_correct_oracle_case_range3() {    
+
+    let mut helper = MigrationHelper::new().unwrap();        
+        
+    let collection_size = 100u16;     
+    let team_amount = 10u16;
+    let price = dec!("20");
+        
+    helper.instantiate(collection_size,  price).unwrap();    
+    
+    helper.mint_till_start_sale(100, team_amount).unwrap();
+
+    // set price stages here: 15-20-25 USD for 10-20-100
+    helper.set_price(dec!("15.0"), dec!("20.0"), dec!("25.0"),  10u16, 20u16).unwrap();
+    
+    let xrd_price = dec!("0.08");
+    helper.use_oracle_xrd_price(xrd_price);
+
+    // at first 20 placeholders -> 10*15 + 10*20 = 150 + 200 = 350
+    let amount_token = 350 / dec!("0.08");
+    helper.buy_placeholders(true,  20u16, amount_token).unwrap();
+    
+    // buy 45 placeholder: should cost 45*25= 1.125
+    let amount_token = 1125 / dec!("0.08");
     helper.buy_placeholders_check(true,  45u16, amount_token, true, dec!("0.0")).unwrap();    
 }
 
@@ -2957,12 +3142,12 @@ fn test_case_auth_case_use_manual_price_owner()
 }
 
 #[test]
-fn test_case_auth_case_use_runtime_price_owner()
+fn test_case_auth_case_use_oracle_price_owner()
 {
     let mut helper = MigrationHelper::new().unwrap();                                    
     helper.instantiate(100u16,  dec!("1")).unwrap();
 
-    let action = Action::UseRuntimeUsdPrice;
+    let action = Action::UseOracleUsdPrice;
     let proof_address = helper.owner_badge_address.unwrap();
 
     helper.auth_testcase(proof_address, action).unwrap();
@@ -3057,12 +3242,12 @@ fn test_case_auth_case_use_manual_price_super_admin()
 }
 
 #[test]
-fn test_case_auth_case_use_runtime_price_super_admin()
+fn test_case_auth_case_use_oracle_price_super_admin()
 {
     let mut helper = MigrationHelper::new().unwrap();       
     helper.instantiate(100u16,  dec!("1")).unwrap();                                                           
 
-    let action = Action::UseRuntimeUsdPrice;
+    let action = Action::UseOracleUsdPrice;
     let proof_address = helper.super_admin_badge_address.unwrap();
 
     helper.auth_testcase(proof_address, action).unwrap();
@@ -3164,12 +3349,12 @@ fn test_case_auth_case_use_manual_price_admin()
 
 #[test]
 #[should_panic]
-fn test_case_auth_case_use_runtime_price_admin()
+fn test_case_auth_case_use_oracle_price_admin()
 {
     let mut helper = MigrationHelper::new().unwrap();       
     helper.instantiate(100u16,  dec!("1")).unwrap();                                                           
 
-    let action = Action::UseRuntimeUsdPrice;
+    let action = Action::UseOracleUsdPrice;
     let proof_address = helper.admin_badge_address.unwrap();
 
     helper.auth_testcase(proof_address, action).unwrap();

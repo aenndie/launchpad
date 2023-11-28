@@ -282,6 +282,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "dummy_oracle"
+version = "1.0.0"
+dependencies = [
+ "dummy_oracle",
+ "radix-engine",
+ "radix-engine-interface",
+ "sbor",
+ "scrypto",
+ "scrypto-test",
+ "scrypto-unit",
+ "transaction",
+]
+
+[[package]]
 name = "ed25519"
 version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1041,6 +1055,7 @@ version = "1.0.0"
 dependencies = [
  "authorization",
  "dummy_account",
+ "dummy_oracle",
  "minting",
  "pretty_assertions",
  "radix-engine",
