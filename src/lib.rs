@@ -163,7 +163,12 @@ mod pyrosale {
 
             
             // init usd price
-            let xrd_price = 1 / Runtime::get_usd_price();                 
+            //let xrd_price = 1 / Runtime::get_usd_price();                 
+
+            let comp: Global<AnyComponent> = Global::from(oracle_adress);
+            let price_data:Option<PriceData> = comp.call_raw("get_price", scrypto_args!());
+
+            let xrd_price = price_data.unwrap().price;
         
             // Instantiate a Pyro component
             Self {

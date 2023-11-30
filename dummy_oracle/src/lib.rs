@@ -33,11 +33,11 @@ mod dummy_oracle {
             self.account_address
         }
 
-        pub fn get_price(&self) -> PriceData {            
-            PriceData {
+        pub fn get_price(&self) -> Option<PriceData> {            
+            Some(PriceData {
                 price: self.price, 
                 timestamp: 0i64
-            }
+            })
         }
 
         pub fn set_price(&mut self, new_price:Decimal) {            

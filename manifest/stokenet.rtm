@@ -59,10 +59,10 @@ Pyro NFTs: resource_tdx_2_1nt00xyv5y9wserfsc5le5zptjfpkerrj5wkldd0au54fx4emdtx8e
 Placeholder NFTs: resource_tdx_2_1n24ferj7flctpms24dc8s4uaprhwv7qh64tefh6sxe64zdkwc6d0vh
 
 ******************************************************************************************
-Sale package: package_tdx_2_1p484x0jyg6yh6ua7udsyvheg3z9vutd7ntxnk73u0qxp06p55lkyke
+Sale package: package_tdx_2_1ph38ulleuq8mf4eu006zjj4j7szyhcmh26rm6zrreezsvsemhfm3wu
 
 CALL_FUNCTION
-    Address("package_tdx_2_1p484x0jyg6yh6ua7udsyvheg3z9vutd7ntxnk73u0qxp06p55lkyke")
+    Address("package_tdx_2_1ph38ulleuq8mf4eu006zjj4j7szyhcmh26rm6zrreezsvsemhfm3wu")
 	"PyroSale"
     "instantiate_pyro"
 	Address("resource_tdx_2_1th5pgxcg96emd55vz3ek9selpx0v35r9zp20rt8x0p8gtpvr7a8dkn")
@@ -72,9 +72,8 @@ CALL_FUNCTION
 	Address("resource_tdx_2_1n24ferj7flctpms24dc8s4uaprhwv7qh64tefh6sxe64zdkwc6d0vh")
 	Decimal("20.0")
 	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
-	50u16
-	Address("component_tdx_2_1cprtv9hkwqeysudwe9q8vq9k9zrmrfz2x36s8gmhdp2dmqlj9xtyed")	
-	;
+	50u16	
+	Address("component_tdx_2_1cprtv9hkwqeysudwe9q8vq9k9zrmrfz2x36s8gmhdp2dmqlj9xtyed");
 CALL_METHOD
 	Address("account_tdx_2_1296lkdnr28fpvs4cccgh70g8vq7d5sdlyweqmds07nnc8d48nzd4tj")
 	"deposit_batch"
