@@ -5,7 +5,6 @@ use helper::*;
 const POS_DIFF_1:Decimal = dec!("1");
 const POS_DIFF_ATO:Decimal = dec!("0.000000000000000001"); // 10^-18
 
-
 #[test]
 fn tc_0_0_just_instantiate() {    
 

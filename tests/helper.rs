@@ -1068,7 +1068,7 @@ impl MigrationHelper {
 
         let new_price = self.dummy_oracle.get_price(&mut self.env).unwrap();
 
-        assert_eq!(price, new_price.price);        
+        assert_eq!(price, new_price.unwrap().price);        
 
         self.latest_usd_price = 1 / price;
     }      

@@ -754,10 +754,10 @@ mod pyrosale {
         /* ORACLE */   fn get_oracle_price(&mut self) -> Decimal 
         {
             // RELIGANT.get_price().unwrap().price            
-            let comp: Global<AnyComponent> = Global::from(self.oracle_adress);
-            let price:PriceData = comp.call_raw("get_price", scrypto_args!());
+            let comp: Global<AnyComponent> = Global::from(self.oracle_adress);            
+            let price_data:Option<PriceData> = comp.call_raw("get_price", scrypto_args!());
 
-            price.price
+            price_data.unwrap().price
         }
 
         pub fn use_oracle_xrd_price(&mut self) {                                                

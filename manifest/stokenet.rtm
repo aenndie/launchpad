@@ -219,12 +219,12 @@ SET_METADATA
 
 
 Dummy Oracle:
-package_tdx_2_1p5szlgh4ve8h3uptq92j5h73pplh5na9yw0kufydcgzaufwdnhlq8q
+package_tdx_2_1p5xzzhdezfrsnaxs7c6d7vy223azaahr02s34p46tvhumxa7k3640a
 
 CALL_FUNCTION
-    Address("package_tdx_2_1p5szlgh4ve8h3uptq92j5h73pplh5na9yw0kufydcgzaufwdnhlq8q")
+    Address("package_tdx_2_1p5xzzhdezfrsnaxs7c6d7vy223azaahr02s34p46tvhumxa7k3640a")
 	"DummyOracle"
     "instantiate"
 	Decimal("0.05");	
 
-component_tdx_2_1cprtv9hkwqeysudwe9q8vq9k9zrmrfz2x36s8gmhdp2dmqlj9xtyed
+component_tdx_2_1cqrugsphuxpneatd60jsmqnkkaws0ukjggc83lwj6dql8flgmqn7re
